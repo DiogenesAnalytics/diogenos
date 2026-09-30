@@ -10,9 +10,12 @@
 
 > **Diogenes, but as an operating system.**
 
-DiogenOS is a minimal, rigorously defined Linux environment.
+DiogenOS (*Diogenes OS*) is a minimal, rigorously defined Linux environment.
 
-Rather than maintaining a collection of installation scripts, configuration files, and undocumented system modifications, DiogenOS defines the desired state of a machine and provides the tools to bring a Linux system into that state.
+Rather than maintaining a collection of installation scripts, configuration
+files, and undocumented system modifications, DiogenOS defines the desired
+state of a machine and provides the tools to bring a Linux system into that
+state.
 
 ```text
 Current State → DiogenOS → Desired State
@@ -25,7 +28,8 @@ The goal is simple:
 DiogenOS is built around two principles:
 
 * **Minimalism** — install and configure only what is actually needed.
-* **Logical rigor** — make system state explicit, reproducible, testable, and verifiable.
+* **Logical rigor** — make system state explicit, reproducible, testable,
+  and verifiable.
 
 ## Installation
 
@@ -39,7 +43,9 @@ $ pip install git+https://github.com/DiogenesAnalytics/diogenos
 
 ## Status
 
-DiogenOS is in the early stages of development. The initial implementation focuses on configuring a Linux system into a defined personal computing environment.
+DiogenOS is in the early stages of development. The initial implementation
+focuses on configuring a Linux system into a defined personal computing
+environment.
 
 ## License
 
