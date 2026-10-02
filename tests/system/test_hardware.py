@@ -7,6 +7,7 @@ from diogenos.system.hardware import Hardware
 from diogenos.system.hardware import HardwareDetector
 
 
+@pytest.mark.hardware
 @pytest.mark.system
 def test_hardware() -> None:
     """Test hardware properties."""
@@ -19,6 +20,7 @@ def test_hardware() -> None:
     assert hardware.processor == "Intel(R) Core(TM) i5-2500 CPU @ 3.30GHz"
 
 
+@pytest.mark.hardware
 @pytest.mark.system
 def test_detect(monkeypatch: MonkeyPatch) -> None:
     """Test detection of hardware."""
