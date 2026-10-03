@@ -9,3 +9,4 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "platform: platform module tests.")
     config.addinivalue_line("markers", "hardware: hardware module tests.")
     config.addinivalue_line("markers", "desktop: desktop module tests.")
+    config.addinivalue_line("markers", "base: system.base module tests.")
