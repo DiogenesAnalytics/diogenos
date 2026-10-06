@@ -6,10 +6,11 @@ from typing import Tuple
 
 from diogenos.feature.component import Component
 from diogenos.feature.component import ComponentImplementation
+from diogenos.feature.component import UbuntuComponentImplementation
 from diogenos.system.base import System
 
 
-class UbuntuDockerEngine(ComponentImplementation):
+class UbuntuDockerEngine(UbuntuComponentImplementation):
     """Define the Ubuntu implementation of Docker Engine."""
 
     def __init__(
@@ -18,10 +19,6 @@ class UbuntuDockerEngine(ComponentImplementation):
     ) -> None:
         """Initialize the Ubuntu Docker Engine implementation."""
         self._run = run
-
-    def supports(self, system: System) -> bool:
-        """Determine whether this implementation supports the system."""
-        return system.platform.os == "ubuntu"
 
     def install(self, system: System) -> None:
         """Install Docker Engine on Ubuntu."""
