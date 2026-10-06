@@ -8,6 +8,11 @@ from diogenos.system.hardware import Hardware
 from diogenos.system.platform import Platform
 
 
+def pytest_configure(config: pytest.Config) -> None:
+    """Configure pytest with custom markers."""
+    config.addinivalue_line("markers", "resolver: resolver module tests.")
+
+
 @pytest.fixture
 def system() -> System:
     """Create a test system."""

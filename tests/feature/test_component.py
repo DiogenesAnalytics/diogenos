@@ -1,5 +1,7 @@
 """Test the component module."""
 
+from typing import Tuple
+
 import pytest
 
 from diogenos.feature.component import Component
@@ -10,11 +12,20 @@ from diogenos.system.base import System
 class ComponentImplementationStub(ComponentImplementation):
     """Provide a minimal component implementation for testing."""
 
-    def __init__(self, verified: bool = True) -> None:
+    def __init__(
+        self,
+        supported: bool = True,
+        verified: bool = True,
+    ) -> None:
         """Initialize the component implementation stub."""
+        self.supported = supported
         self.verified = verified
         self.install_called = False
         self.verify_called = False
+
+    def supports(self, system: System) -> bool:
+        """Determine whether the implementation supports the system."""
+        return self.supported
 
     def install(self, system: System) -> None:
         """Record that installation was called."""
@@ -32,11 +43,13 @@ class ComponentStub(Component):
     def __init__(
         self,
         satisfied: bool = False,
+        supported: bool = True,
         verified: bool = True,
     ) -> None:
         """Initialize the component stub."""
         self.satisfied = satisfied
         self.implementation_stub = ComponentImplementationStub(
+            supported=supported,
             verified=verified,
         )
 
@@ -44,12 +57,11 @@ class ComponentStub(Component):
         """Return whether the component is satisfied."""
         return self.satisfied
 
-    def implementation(
+    def implementations(
         self,
-        system: System,
-    ) -> ComponentImplementation:
-        """Return the component implementation."""
-        return self.implementation_stub
+    ) -> Tuple[ComponentImplementation, ...]:
+        """Return the component implementations."""
+        return (self.implementation_stub,)
 
 
 @pytest.fixture
@@ -88,39 +100,77 @@ def test_implementation_is_abstract() -> None:
 
 @pytest.mark.component
 @pytest.mark.feature
-def test_apply_when_satisfied(
+def test_component_is_satisfied(
     system: System,
     satisfied_component: ComponentStub,
 ) -> None:
-    """Test that apply does nothing when already satisfied."""
-    satisfied_component.apply(system)
-
-    assert satisfied_component.implementation_stub.install_called is False
-    assert satisfied_component.implementation_stub.verify_called is False
+    """Test that a component reports when it is satisfied."""
+    assert satisfied_component.is_satisfied(system) is True
 
 
 @pytest.mark.component
 @pytest.mark.feature
-def test_apply_when_not_satisfied(
+def test_component_is_not_satisfied(
     system: System,
     component: ComponentStub,
 ) -> None:
-    """Test that apply installs and verifies an unsatisfied component."""
-    component.apply(system)
-
-    assert component.implementation_stub.install_called is True
-    assert component.implementation_stub.verify_called is True
+    """Test that a component reports when it is not satisfied."""
+    assert component.is_satisfied(system) is False
 
 
 @pytest.mark.component
 @pytest.mark.feature
-def test_apply_raises_when_verification_fails(
-    system: System,
-    failed_component: ComponentStub,
+def test_component_returns_implementation(
+    component: ComponentStub,
 ) -> None:
-    """Test that apply raises when verification fails."""
-    with pytest.raises(RuntimeError, match="failed verification"):
-        failed_component.apply(system)
+    """Test that a component returns its implementation."""
+    implementations = component.implementations()
 
-    assert failed_component.implementation_stub.install_called is True
-    assert failed_component.implementation_stub.verify_called is True
+    assert implementations == (component.implementation_stub,)
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_implementation_supports_system(
+    system: System,
+) -> None:
+    """Test that an implementation reports support for a system."""
+    implementation = ComponentImplementationStub(supported=True)
+
+    assert implementation.supports(system) is True
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_implementation_does_not_support_system(
+    system: System,
+) -> None:
+    """Test that an implementation reports when it does not support a system."""
+    implementation = ComponentImplementationStub(supported=False)
+
+    assert implementation.supports(system) is False
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_implementation_install(
+    system: System,
+) -> None:
+    """Test that installation is called."""
+    implementation = ComponentImplementationStub()
+
+    implementation.install(system)
+
+    assert implementation.install_called is True
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_implementation_verify(
+    system: System,
+) -> None:
+    """Test that verification is called."""
+    implementation = ComponentImplementationStub()
+
+    assert implementation.verify(system) is True
+    assert implementation.verify_called is True

@@ -2,12 +2,17 @@
 
 from abc import ABC
 from abc import abstractmethod
+from typing import Tuple
 
 from diogenos.system.base import System
 
 
 class ComponentImplementation(ABC):
     """Define a platform-specific component implementation."""
+
+    @abstractmethod
+    def supports(self, system: System) -> bool:
+        """Determine whether this implementation supports the system."""
 
     @abstractmethod
     def install(self, system: System) -> None:
@@ -26,16 +31,7 @@ class Component(ABC):
         """Determine whether the component is already satisfied."""
 
     @abstractmethod
-    def implementation(self, system: System) -> ComponentImplementation:
-        """Return the implementation appropriate for the system."""
-
-    def apply(self, system: System) -> None:
-        """Satisfy the component on the system."""
-        if self.is_satisfied(system):
-            return
-
-        implementation = self.implementation(system)
-        implementation.install(system)
-
-        if not implementation.verify(system):
-            raise RuntimeError(f"component {type(self).__name__} failed verification")
+    def implementations(
+        self,
+    ) -> Tuple[ComponentImplementation, ...]:
+        """Return the implementations available for the component."""
