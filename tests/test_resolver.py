@@ -4,10 +4,10 @@ from typing import Tuple
 
 import pytest
 
+from diogenos.feature.catalog.docker.engine import DockerEngine
+from diogenos.feature.catalog.docker.engine import UbuntuDockerEngine
 from diogenos.feature.component import Component
 from diogenos.feature.component import ComponentImplementation
-from diogenos.feature.docker.engine import DockerEngine
-from diogenos.feature.docker.engine import UbuntuDockerEngine
 from diogenos.resolver import Resolver
 from diogenos.system.base import System
 
