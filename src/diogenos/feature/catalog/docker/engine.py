@@ -22,7 +22,72 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
 
     def install(self, system: System) -> None:
         """Install Docker Engine on Ubuntu."""
-        raise NotImplementedError
+        self._run(
+            ["apt-get", "update"],
+        )
+        self._run(
+            [
+                "apt-get",
+                "install",
+                "-y",
+                "ca-certificates",
+                "curl",
+            ],
+        )
+        self._run(
+            [
+                "install",
+                "-m",
+                "0755",
+                "-d",
+                "/etc/apt/keyrings",
+            ],
+        )
+        self._run(
+            [
+                "curl",
+                "-fsSL",
+                "https://download.docker.com/linux/ubuntu/gpg",
+                "-o",
+                "/etc/apt/keyrings/docker.asc",
+            ],
+        )
+        self._run(
+            [
+                "chmod",
+                "a+r",
+                "/etc/apt/keyrings/docker.asc",
+            ],
+        )
+        self._run(
+            [
+                "sh",
+                "-c",
+                (
+                    "echo "
+                    f"'deb [arch={system.hardware.architecture} "
+                    "signed-by=/etc/apt/keyrings/docker.asc] "
+                    "https://download.docker.com/linux/ubuntu "
+                    f"{system.platform.codename} stable' "
+                    "> /etc/apt/sources.list.d/docker.list"
+                ),
+            ],
+        )
+        self._run(
+            ["apt-get", "update"],
+        )
+        self._run(
+            [
+                "apt-get",
+                "install",
+                "-y",
+                "docker-ce",
+                "docker-ce-cli",
+                "containerd.io",
+                "docker-buildx-plugin",
+                "docker-compose-plugin",
+            ],
+        )
 
     def verify(self, system: System) -> bool:
         """Verify that Docker Engine is installed correctly."""
