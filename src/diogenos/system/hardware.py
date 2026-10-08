@@ -10,14 +10,25 @@ class Hardware:
 
     machine: str
     processor: str
+    architecture: str
 
 
 class HardwareDetector:
     """Detect the hardware of the current system."""
 
     def detect(self) -> Hardware:
-        """Detect the hardware of the current system."""
+        """Detect the current system hardware."""
+        machine = platform.machine()
+
+        architecture = {
+            "x86_64": "amd64",
+            "amd64": "amd64",
+            "aarch64": "arm64",
+            "arm64": "arm64",
+        }.get(machine, machine)
+
         return Hardware(
-            machine=platform.machine(),
+            machine=machine,
             processor=platform.processor(),
+            architecture=architecture,
         )

@@ -20,11 +20,13 @@ def system() -> System:
         platform=Platform(
             os="ubuntu",
             version="24.04",
+            codename="noble",
             pretty_name="Ubuntu 24.04.3 LTS",
         ),
         hardware=Hardware(
             machine="x86_64",
             processor="Intel(R) Core(TM) i5-2500 CPU @ 3.30GHz",
+            architecture="amd64",
         ),
         desktop=Desktop(
             name="ubuntu:GNOME",

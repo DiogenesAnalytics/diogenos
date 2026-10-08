@@ -61,7 +61,8 @@ def test_implementation_does_not_support_system(
         platform=system.platform.__class__(
             os="fedora",
             version=system.platform.version,
-            pretty_name=system.platform.pretty_name,
+            codename=system.platform.codename,
+            pretty_name="Fedora Linux",
         ),
         hardware=system.hardware,
         desktop=system.desktop,

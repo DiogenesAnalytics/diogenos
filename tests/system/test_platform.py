@@ -14,11 +14,13 @@ def test_platform() -> None:
     system_platform = Platform(
         os="ubuntu",
         version="24.04",
+        codename="noble",
         pretty_name="Ubuntu 24.04.3 LTS",
     )
 
     assert system_platform.os == "ubuntu"
     assert system_platform.version == "24.04"
+    assert system_platform.codename == "noble"
     assert system_platform.pretty_name == "Ubuntu 24.04.3 LTS"
 
 
@@ -35,6 +37,7 @@ def test_detect_linux(monkeypatch: MonkeyPatch) -> None:
         lambda: {
             "ID": "ubuntu",
             "VERSION_ID": "24.04",
+            "VERSION_CODENAME": "noble",
             "PRETTY_NAME": "Ubuntu 24.04.3 LTS",
         },
     )
@@ -43,6 +46,7 @@ def test_detect_linux(monkeypatch: MonkeyPatch) -> None:
 
     assert system_platform.os == "ubuntu"
     assert system_platform.version == "24.04"
+    assert system_platform.codename == "noble"
     assert system_platform.pretty_name == "Ubuntu 24.04.3 LTS"
 
 
@@ -59,6 +63,7 @@ def test_detect_linux_uses_os_release(monkeypatch: MonkeyPatch) -> None:
         lambda: {
             "ID": "fedora",
             "VERSION_ID": "43",
+            "VERSION_CODENAME": "fedora",
             "PRETTY_NAME": "Fedora Linux 43",
         },
     )
@@ -71,7 +76,32 @@ def test_detect_linux_uses_os_release(monkeypatch: MonkeyPatch) -> None:
 
     assert system_platform.os == "fedora"
     assert system_platform.version == "43"
+    assert system_platform.codename == "fedora"
     assert system_platform.pretty_name == "Fedora Linux 43"
+
+
+@pytest.mark.platform
+@pytest.mark.system
+def test_detect_linux_without_codename(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Test Linux detection without a distribution codename."""
+    monkeypatch.setattr(
+        "diogenos.system.platform.platform.system",
+        lambda: "Linux",
+    )
+    monkeypatch.setattr(
+        "diogenos.system.platform.platform.freedesktop_os_release",
+        lambda: {
+            "ID": "fedora",
+            "VERSION_ID": "43",
+            "PRETTY_NAME": "Fedora Linux 43",
+        },
+    )
+
+    system_platform = PlatformDetector().detect()
+
+    assert system_platform.codename == ""
 
 
 @pytest.mark.platform
@@ -99,6 +129,7 @@ def test_detect_macos(monkeypatch: MonkeyPatch) -> None:
 
     assert system_platform.os == "darwin"
     assert system_platform.version == "25.0.0"
+    assert system_platform.codename == ""
     assert system_platform.pretty_name == "macOS-26.0-arm64"
 
 
@@ -127,4 +158,5 @@ def test_detect_windows(monkeypatch: MonkeyPatch) -> None:
 
     assert system_platform.os == "windows"
     assert system_platform.version == "11"
+    assert system_platform.codename == ""
     assert system_platform.pretty_name == "Windows-11-10.0.26100-SP0"

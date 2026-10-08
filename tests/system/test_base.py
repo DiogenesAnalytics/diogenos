@@ -71,6 +71,7 @@ def test_detect(monkeypatch: MonkeyPatch) -> None:
         lambda _: Platform(
             os="ubuntu",
             version="24.04",
+            codename="noble",
             pretty_name="Ubuntu 24.04.3 LTS",
         ),
     )
@@ -79,6 +80,7 @@ def test_detect(monkeypatch: MonkeyPatch) -> None:
         lambda _: Hardware(
             machine="x86_64",
             processor="Intel(R) Core(TM) i5-2500 CPU @ 3.30GHz",
+            architecture="amd64",
         ),
     )
     monkeypatch.setattr(

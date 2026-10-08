@@ -10,6 +10,7 @@ class Platform:
 
     os: str
     version: str
+    codename: str
     pretty_name: str
 
 
@@ -26,6 +27,7 @@ class PlatformDetector:
         return Platform(
             os=system.lower(),
             version=platform.release(),
+            codename="",
             pretty_name=platform.platform(),
         )
 
@@ -36,5 +38,6 @@ class PlatformDetector:
         return Platform(
             os=data["ID"],
             version=data["VERSION_ID"],
+            codename=data.get("VERSION_CODENAME", ""),
             pretty_name=data["PRETTY_NAME"],
         )
