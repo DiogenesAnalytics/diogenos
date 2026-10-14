@@ -8,6 +8,7 @@ from typing import Tuple
 
 import pytest
 
+from diogenos.feature.catalog.git.git import FedoraGit
 from diogenos.feature.catalog.git.git import GitComponent
 from diogenos.feature.catalog.git.git import UbuntuGit
 from diogenos.system.base import System
@@ -83,16 +84,17 @@ def test_git_component_is_not_satisfied_when_git_is_unavailable(
 
 @pytest.mark.component
 @pytest.mark.feature
-def test_git_component_returns_ubuntu_implementation(
+def test_git_component_returns_implementations(
     system: System,
 ) -> None:
-    """Verify that the Git component exposes its Ubuntu implementation."""
+    """Verify that the Git component exposes both implementations."""
     component = GitComponent()
 
     implementations = component.implementations()
 
-    assert len(implementations) == 1
+    assert len(implementations) == 2
     assert isinstance(implementations[0], UbuntuGit)
+    assert isinstance(implementations[1], FedoraGit)
     assert implementations[0].supports(system) is True
 
 
@@ -122,7 +124,7 @@ def test_ubuntu_git_installs_git(system: System) -> None:
 def test_ubuntu_git_verifies_successful_installation(
     system: System,
 ) -> None:
-    """Verify that Git installation succeeds when git --version succeeds."""
+    """Verify that Ubuntu Git reports successful verification."""
     run = RunStub()
     implementation = UbuntuGit(run=run)
 
@@ -144,7 +146,7 @@ def test_ubuntu_git_verifies_successful_installation(
 def test_ubuntu_git_verifies_failed_installation(
     system: System,
 ) -> None:
-    """Verify that Git installation fails when git --version fails."""
+    """Verify that Ubuntu Git reports failed verification."""
     run = RunStub(returncode=127)
     implementation = UbuntuGit(run=run)
 
@@ -159,6 +161,70 @@ def test_ubuntu_git_installation_propagates_command_failure(
     """Verify that an APT failure interrupts Git installation."""
     run = RunStub(returncode=1)
     implementation = UbuntuGit(run=run)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        implementation.install(system)
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_fedora_git_installs_git(system: System) -> None:
+    """Verify that Fedora Git installation runs the expected command."""
+    run = RunStub()
+    implementation = FedoraGit(run=run)
+
+    implementation.install(system)
+
+    assert run.calls == [
+        (
+            ["dnf", "install", "-y", "git"],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_fedora_git_verifies_successful_installation(
+    system: System,
+) -> None:
+    """Verify that Fedora Git reports successful verification."""
+    run = RunStub()
+    implementation = FedoraGit(run=run)
+
+    assert implementation.verify(system) is True
+    assert run.calls == [
+        (
+            ["git", "--version"],
+            {
+                "capture_output": True,
+                "check": False,
+                "text": True,
+            },
+        ),
+    ]
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_fedora_git_verifies_failed_installation(
+    system: System,
+) -> None:
+    """Verify that Fedora Git reports failed verification."""
+    run = RunStub(returncode=127)
+    implementation = FedoraGit(run=run)
+
+    assert implementation.verify(system) is False
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_fedora_git_installation_propagates_command_failure(
+    system: System,
+) -> None:
+    """Verify that a DNF failure interrupts Git installation."""
+    run = RunStub(returncode=1)
+    implementation = FedoraGit(run=run)
 
     with pytest.raises(subprocess.CalledProcessError):
         implementation.install(system)

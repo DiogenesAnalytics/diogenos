@@ -6,6 +6,7 @@ from typing import Tuple
 
 from diogenos.feature.component import Component
 from diogenos.feature.component import ComponentImplementation
+from diogenos.feature.component import FedoraComponentImplementation
 from diogenos.feature.component import UbuntuComponentImplementation
 from diogenos.system.base import System
 
@@ -25,6 +26,34 @@ class UbuntuGit(UbuntuComponentImplementation):
         self._run(["apt-get", "update"], check=True)
         self._run(
             ["apt-get", "install", "-y", "git"],
+            check=True,
+        )
+
+    def verify(self, system: System) -> bool:
+        """Verify that Git is available."""
+        result = self._run(
+            ["git", "--version"],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        return result.returncode == 0
+
+
+class FedoraGit(FedoraComponentImplementation):
+    """Define the Fedora implementation of Git."""
+
+    def __init__(
+        self,
+        run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    ) -> None:
+        """Initialize the Fedora Git implementation."""
+        self._run = run
+
+    def install(self, system: System) -> None:
+        """Install Git on Fedora."""
+        self._run(
+            ["dnf", "install", "-y", "git"],
             check=True,
         )
 
@@ -63,4 +92,7 @@ class GitComponent(Component):
         self,
     ) -> Tuple[ComponentImplementation, ...]:
         """Return the implementations available for Git."""
-        return (UbuntuGit(run=self._run),)
+        return (
+            UbuntuGit(run=self._run),
+            FedoraGit(run=self._run),
+        )
