@@ -8,6 +8,8 @@ from typing import Tuple
 
 import pytest
 
+from diogenos.feature.catalog.git.git import ArchGit
+from diogenos.feature.catalog.git.git import DebianGit
 from diogenos.feature.catalog.git.git import FedoraGit
 from diogenos.feature.catalog.git.git import GitComponent
 from diogenos.feature.catalog.git.git import UbuntuGit
@@ -87,14 +89,12 @@ def test_git_component_is_not_satisfied_when_git_is_unavailable(
 def test_git_component_returns_implementations(
     system: System,
 ) -> None:
-    """Verify that the Git component exposes both implementations."""
+    """Verify that the Git component exposes its implementations."""
     component = GitComponent()
 
     implementations = component.implementations()
 
-    assert len(implementations) == 2
-    assert isinstance(implementations[0], UbuntuGit)
-    assert isinstance(implementations[1], FedoraGit)
+    assert len(implementations) == 4
     assert implementations[0].supports(system) is True
 
 
@@ -225,6 +225,138 @@ def test_fedora_git_installation_propagates_command_failure(
     """Verify that a DNF failure interrupts Git installation."""
     run = RunStub(returncode=1)
     implementation = FedoraGit(run=run)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        implementation.install(system)
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_debian_git_installs_git(system: System) -> None:
+    """Verify that Debian Git installation runs the expected commands."""
+    run = RunStub()
+    implementation = DebianGit(run=run)
+
+    implementation.install(system)
+
+    assert run.calls == [
+        (
+            ["apt-get", "update"],
+            {"check": True},
+        ),
+        (
+            ["apt-get", "install", "-y", "git"],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_debian_git_verifies_successful_installation(
+    system: System,
+) -> None:
+    """Verify that Git installation succeeds when git --version succeeds."""
+    run = RunStub()
+    implementation = DebianGit(run=run)
+
+    assert implementation.verify(system) is True
+    assert run.calls == [
+        (
+            ["git", "--version"],
+            {
+                "capture_output": True,
+                "check": False,
+                "text": True,
+            },
+        ),
+    ]
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_debian_git_verifies_failed_installation(
+    system: System,
+) -> None:
+    """Verify that Git installation fails when git --version fails."""
+    run = RunStub(returncode=127)
+    implementation = DebianGit(run=run)
+
+    assert implementation.verify(system) is False
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_debian_git_installation_propagates_command_failure(
+    system: System,
+) -> None:
+    """Verify that an APT failure interrupts Git installation."""
+    run = RunStub(returncode=1)
+    implementation = DebianGit(run=run)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        implementation.install(system)
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_arch_git_installs_git(system: System) -> None:
+    """Verify that Arch Git installation runs the expected command."""
+    run = RunStub()
+    implementation = ArchGit(run=run)
+
+    implementation.install(system)
+
+    assert run.calls == [
+        (
+            ["pacman", "-S", "--noconfirm", "git"],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_arch_git_verifies_successful_installation(
+    system: System,
+) -> None:
+    """Verify that Git installation succeeds when git --version succeeds."""
+    run = RunStub()
+    implementation = ArchGit(run=run)
+
+    assert implementation.verify(system) is True
+    assert run.calls == [
+        (
+            ["git", "--version"],
+            {
+                "capture_output": True,
+                "check": False,
+                "text": True,
+            },
+        ),
+    ]
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_arch_git_verifies_failed_installation(
+    system: System,
+) -> None:
+    """Verify that Git installation fails when git --version fails."""
+    run = RunStub(returncode=127)
+    implementation = ArchGit(run=run)
+
+    assert implementation.verify(system) is False
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_arch_git_installation_propagates_command_failure(
+    system: System,
+) -> None:
+    """Verify that a Pacman failure interrupts Git installation."""
+    run = RunStub(returncode=1)
+    implementation = ArchGit(run=run)
 
     with pytest.raises(subprocess.CalledProcessError):
         implementation.install(system)

@@ -1,14 +1,18 @@
-"""Define components."""
+"""Define the component package."""
 
 from .base import Component
-from .implementation import ComponentImplementation
-from .implementation import FedoraComponentImplementation
-from .implementation import UbuntuComponentImplementation
+from .implementation.base import ComponentImplementation
+from .implementation.linux import ArchComponentImplementation
+from .implementation.linux import DebianComponentImplementation
+from .implementation.linux import FedoraComponentImplementation
+from .implementation.linux import UbuntuComponentImplementation
 
 
 __all__ = [
+    "ArchComponentImplementation",
     "Component",
     "ComponentImplementation",
+    "DebianComponentImplementation",
     "FedoraComponentImplementation",
     "UbuntuComponentImplementation",
 ]
