@@ -6,6 +6,7 @@ import pytest
 
 from diogenos.feature.component import Component
 from diogenos.feature.component import ComponentImplementation
+from diogenos.feature.component import Dependency
 from diogenos.system.base import System
 
 
@@ -96,3 +97,31 @@ def test_component_returns_implementation(
     implementations = component.implementations()
 
     assert implementations == (component.implementation_stub,)
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_component_has_no_dependencies_by_default(
+    component: ComponentStub,
+) -> None:
+    """Test that a component has no dependencies by default."""
+    assert component.dependencies() == ()
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_component_returns_declared_dependencies() -> None:
+    """Test that a component returns its declared dependencies."""
+    dependency = Dependency("GitComponent")
+
+    class DependentComponent(ComponentStub):
+        """Provide a component with a declared dependency."""
+
+        def dependencies(self) -> Tuple[Dependency, ...]:
+            """Return the component dependencies."""
+            return (dependency,)
+
+    component = DependentComponent()
+
+    assert component.dependencies() == (dependency,)
+    assert component.dependencies()[0].name == "GitComponent"

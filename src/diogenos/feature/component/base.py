@@ -6,11 +6,16 @@ from typing import Tuple
 
 from diogenos.system.base import System
 
+from .dependency import Dependency
 from .implementation.base import ComponentImplementation
 
 
 class Component(ABC):
     """Define a component that can be satisfied on a system."""
+
+    def dependencies(self) -> Tuple[Dependency, ...]:
+        """Return the dependencies of this component."""
+        return ()
 
     @abstractmethod
     def is_satisfied(self, system: System) -> bool:
