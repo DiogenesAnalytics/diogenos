@@ -1,7 +1,7 @@
 """Resolve component implementations."""
 
-from diogenos.feature.component import Component
-from diogenos.feature.component import ComponentImplementation
+from diogenos.component import Component
+from diogenos.component import ComponentImplementation
 from diogenos.system.base import System
 
 

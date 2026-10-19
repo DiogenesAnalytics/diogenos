@@ -4,9 +4,9 @@ from typing import Tuple
 
 import pytest
 
-from diogenos.feature.component import Component
-from diogenos.feature.component import ComponentImplementation
-from diogenos.feature.component import Dependency
+from diogenos.component import Component
+from diogenos.component import ComponentImplementation
+from diogenos.component import Dependency
 from diogenos.system.base import System
 
 

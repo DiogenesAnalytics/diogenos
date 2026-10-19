@@ -4,9 +4,9 @@ import subprocess
 
 import pytest
 
+from diogenos.component import UbuntuComponentImplementation
 from diogenos.feature.catalog.docker.engine import DockerEngine
 from diogenos.feature.catalog.docker.engine import UbuntuDockerEngine
-from diogenos.feature.component import UbuntuComponentImplementation
 from diogenos.system.base import System
 
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from diogenos.feature.component import ComponentImplementation
+from diogenos.component import ComponentImplementation
 from diogenos.system.base import System
 
 

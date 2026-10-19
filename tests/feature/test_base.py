@@ -6,9 +6,9 @@ from typing import Tuple
 
 import pytest
 
+from diogenos.component import Component
+from diogenos.component import ComponentImplementation
 from diogenos.feature.base import Feature
-from diogenos.feature.component import Component
-from diogenos.feature.component import ComponentImplementation
 from diogenos.resolver import Resolver
 from diogenos.system.base import System
 

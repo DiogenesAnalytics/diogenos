@@ -4,12 +4,12 @@ import subprocess
 from typing import Callable
 from typing import Tuple
 
-from diogenos.feature.component import ArchComponentImplementation
-from diogenos.feature.component import Component
-from diogenos.feature.component import ComponentImplementation
-from diogenos.feature.component import DebianComponentImplementation
-from diogenos.feature.component import FedoraComponentImplementation
-from diogenos.feature.component import UbuntuComponentImplementation
+from diogenos.component import ArchComponentImplementation
+from diogenos.component import Component
+from diogenos.component import ComponentImplementation
+from diogenos.component import DebianComponentImplementation
+from diogenos.component import FedoraComponentImplementation
+from diogenos.component import UbuntuComponentImplementation
 from diogenos.system.base import System
 
 

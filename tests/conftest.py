@@ -10,7 +10,10 @@ from diogenos.system.platform import Platform
 
 def pytest_configure(config: pytest.Config) -> None:
     """Configure pytest with custom markers."""
+    config.addinivalue_line("markers", "component: component module tests.")
+    config.addinivalue_line("markers", "feature: feature package tests.")
     config.addinivalue_line("markers", "resolver: resolver module tests.")
+    config.addinivalue_line("markers", "system: system package tests.")
 
 
 @pytest.fixture

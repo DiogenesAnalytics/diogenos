@@ -3,7 +3,7 @@
 from typing import Optional
 from typing import Tuple
 
-from diogenos.feature.component import Component
+from diogenos.component import Component
 from diogenos.resolver import Resolver
 from diogenos.system.base import System
 
