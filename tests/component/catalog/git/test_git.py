@@ -10,11 +10,10 @@ from diogenos.component.catalog.git.git import FedoraGit
 from diogenos.component.catalog.git.git import GitComponent
 from diogenos.component.catalog.git.git import UbuntuGit
 from diogenos.system.base import System
-from tests.feature.support import RunStub
+from tests.component.support import RunStub
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_git_component_is_satisfied_when_git_is_available(
     system: System,
     run_stub: RunStub,
@@ -36,7 +35,6 @@ def test_git_component_is_satisfied_when_git_is_available(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_git_component_is_not_satisfied_when_git_is_unavailable(
     system: System,
     run_stub: RunStub,
@@ -49,7 +47,6 @@ def test_git_component_is_not_satisfied_when_git_is_unavailable(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_git_component_returns_implementations(
     system: System,
 ) -> None:
@@ -62,7 +59,6 @@ def test_git_component_returns_implementations(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_ubuntu_git_installs_git(
     system: System,
     run_stub: RunStub,
@@ -85,7 +81,6 @@ def test_ubuntu_git_installs_git(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_ubuntu_git_verifies_successful_installation(
     system: System,
     run_stub: RunStub,
@@ -107,7 +102,6 @@ def test_ubuntu_git_verifies_successful_installation(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_ubuntu_git_verifies_failed_installation(
     system: System,
     run_stub: RunStub,
@@ -120,7 +114,6 @@ def test_ubuntu_git_verifies_failed_installation(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_ubuntu_git_installation_propagates_command_failure(
     system: System,
     run_stub: RunStub,
@@ -134,7 +127,6 @@ def test_ubuntu_git_installation_propagates_command_failure(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_fedora_git_installs_git(
     system: System,
     run_stub: RunStub,
@@ -153,7 +145,6 @@ def test_fedora_git_installs_git(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_fedora_git_verifies_successful_installation(
     system: System,
     run_stub: RunStub,
@@ -175,7 +166,6 @@ def test_fedora_git_verifies_successful_installation(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_fedora_git_verifies_failed_installation(
     system: System,
     run_stub: RunStub,
@@ -188,7 +178,6 @@ def test_fedora_git_verifies_failed_installation(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_fedora_git_installation_propagates_command_failure(
     system: System,
     run_stub: RunStub,
@@ -202,7 +191,6 @@ def test_fedora_git_installation_propagates_command_failure(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_debian_git_installs_git(
     system: System,
     run_stub: RunStub,
@@ -225,7 +213,6 @@ def test_debian_git_installs_git(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_debian_git_verifies_successful_installation(
     system: System,
     run_stub: RunStub,
@@ -247,7 +234,6 @@ def test_debian_git_verifies_successful_installation(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_debian_git_verifies_failed_installation(
     system: System,
     run_stub: RunStub,
@@ -260,7 +246,6 @@ def test_debian_git_verifies_failed_installation(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_debian_git_installation_propagates_command_failure(
     system: System,
     run_stub: RunStub,
@@ -274,7 +259,6 @@ def test_debian_git_installation_propagates_command_failure(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_arch_git_installs_git(
     system: System,
     run_stub: RunStub,
@@ -293,7 +277,6 @@ def test_arch_git_installs_git(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_arch_git_verifies_successful_installation(
     system: System,
     run_stub: RunStub,
@@ -315,7 +298,6 @@ def test_arch_git_verifies_successful_installation(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_arch_git_verifies_failed_installation(
     system: System,
     run_stub: RunStub,
@@ -328,7 +310,6 @@ def test_arch_git_verifies_failed_installation(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_arch_git_installation_propagates_command_failure(
     system: System,
     run_stub: RunStub,

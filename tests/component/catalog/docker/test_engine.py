@@ -8,11 +8,10 @@ from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.catalog.docker.engine import DockerEngine
 from diogenos.component.catalog.docker.engine import UbuntuDockerEngine
 from diogenos.system.base import System
-from tests.feature.support import RunStub
+from tests.component.support import RunStub
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_docker_engine_is_satisfied(
     system: System,
     run_stub: RunStub,
@@ -34,7 +33,6 @@ def test_docker_engine_is_satisfied(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_docker_engine_is_not_satisfied(
     system: System,
     run_stub: RunStub,
@@ -47,7 +45,6 @@ def test_docker_engine_is_not_satisfied(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_docker_engine_returns_ubuntu_implementation() -> None:
     """Verify that Docker Engine provides its Ubuntu implementation."""
     component = DockerEngine()
@@ -59,7 +56,6 @@ def test_docker_engine_returns_ubuntu_implementation() -> None:
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_ubuntu_docker_engine_is_ubuntu_implementation() -> None:
     """Verify that UbuntuDockerEngine uses the Ubuntu implementation."""
     assert issubclass(
@@ -69,7 +65,6 @@ def test_ubuntu_docker_engine_is_ubuntu_implementation() -> None:
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_ubuntu_docker_engine_installs_docker(
     system: System,
     run_stub: RunStub,
@@ -134,7 +129,6 @@ def test_ubuntu_docker_engine_installs_docker(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_ubuntu_docker_engine_installation_propagates_command_failure(
     system: System,
     run_stub: RunStub,
