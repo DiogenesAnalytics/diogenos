@@ -8,67 +8,40 @@ from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.catalog.docker.engine import DockerEngine
 from diogenos.component.catalog.docker.engine import UbuntuDockerEngine
 from diogenos.system.base import System
-
-
-class RunStub:
-    """Capture subprocess calls."""
-
-    def __init__(self) -> None:
-        """Initialize the stub."""
-        self.commands: list[list[str]] = []
-
-    def __call__(
-        self,
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        """Capture a subprocess call."""
-        self.commands.append(command)
-
-        return subprocess.CompletedProcess(
-            args=command,
-            returncode=0,
-        )
+from tests.feature.support import RunStub
 
 
 @pytest.mark.component
 @pytest.mark.feature
 def test_docker_engine_is_satisfied(
     system: System,
+    run_stub: RunStub,
 ) -> None:
-    """Test that Docker Engine is satisfied when hello-world succeeds."""
-
-    def run(
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        return subprocess.CompletedProcess(
-            args=command,
-            returncode=0,
-        )
-
-    component = DockerEngine(run=run)
+    """Verify that Docker Engine is satisfied when hello-world succeeds."""
+    component = DockerEngine(run=run_stub)
 
     assert component.is_satisfied(system) is True
+    assert run_stub.calls == [
+        (
+            ["docker", "run", "hello-world"],
+            {
+                "capture_output": True,
+                "check": False,
+                "text": True,
+            },
+        ),
+    ]
 
 
 @pytest.mark.component
 @pytest.mark.feature
 def test_docker_engine_is_not_satisfied(
     system: System,
+    run_stub: RunStub,
 ) -> None:
-    """Test that Docker Engine is not satisfied when hello-world fails."""
-
-    def run(
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        return subprocess.CompletedProcess(
-            args=command,
-            returncode=1,
-        )
-
-    component = DockerEngine(run=run)
+    """Verify that Docker Engine is not satisfied when hello-world fails."""
+    run_stub.returncode = 1
+    component = DockerEngine(run=run_stub)
 
     assert component.is_satisfied(system) is False
 
@@ -76,7 +49,7 @@ def test_docker_engine_is_not_satisfied(
 @pytest.mark.component
 @pytest.mark.feature
 def test_docker_engine_returns_ubuntu_implementation() -> None:
-    """Test that Docker Engine provides its Ubuntu implementation."""
+    """Verify that Docker Engine provides its Ubuntu implementation."""
     component = DockerEngine()
 
     implementations = component.implementations()
@@ -88,7 +61,7 @@ def test_docker_engine_returns_ubuntu_implementation() -> None:
 @pytest.mark.component
 @pytest.mark.feature
 def test_ubuntu_docker_engine_is_ubuntu_implementation() -> None:
-    """Test that UbuntuDockerEngine uses the Ubuntu implementation."""
+    """Verify that UbuntuDockerEngine uses the Ubuntu implementation."""
     assert issubclass(
         UbuntuDockerEngine,
         UbuntuComponentImplementation,
@@ -99,14 +72,14 @@ def test_ubuntu_docker_engine_is_ubuntu_implementation() -> None:
 @pytest.mark.feature
 def test_ubuntu_docker_engine_installs_docker(
     system: System,
+    run_stub: RunStub,
 ) -> None:
-    """Test that UbuntuDockerEngine installs Docker Engine."""
-    run = RunStub()
-    implementation = UbuntuDockerEngine(run=run)
+    """Verify that UbuntuDockerEngine installs Docker Engine."""
+    implementation = UbuntuDockerEngine(run=run_stub)
 
     implementation.install(system)
 
-    assert run.commands == [
+    assert [command for command, _ in run_stub.calls] == [
         ["apt-get", "update"],
         [
             "apt-get",
@@ -158,3 +131,17 @@ def test_ubuntu_docker_engine_installs_docker(
             "docker-compose-plugin",
         ],
     ]
+
+
+@pytest.mark.component
+@pytest.mark.feature
+def test_ubuntu_docker_engine_installation_propagates_command_failure(
+    system: System,
+    run_stub: RunStub,
+) -> None:
+    """Verify that an APT failure interrupts Docker Engine installation."""
+    run_stub.returncode = 1
+    implementation = UbuntuDockerEngine(run=run_stub)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        implementation.install(system)

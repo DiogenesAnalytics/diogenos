@@ -24,6 +24,7 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
         """Install Docker Engine on Ubuntu."""
         self._run(
             ["apt-get", "update"],
+            check=True,
         )
         self._run(
             [
@@ -33,6 +34,7 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
                 "ca-certificates",
                 "curl",
             ],
+            check=True,
         )
         self._run(
             [
@@ -42,6 +44,7 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
                 "-d",
                 "/etc/apt/keyrings",
             ],
+            check=True,
         )
         self._run(
             [
@@ -51,6 +54,7 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
                 "-o",
                 "/etc/apt/keyrings/docker.asc",
             ],
+            check=True,
         )
         self._run(
             [
@@ -58,6 +62,7 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
                 "a+r",
                 "/etc/apt/keyrings/docker.asc",
             ],
+            check=True,
         )
         self._run(
             [
@@ -72,9 +77,11 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
                     "> /etc/apt/sources.list.d/docker.list"
                 ),
             ],
+            check=True,
         )
         self._run(
             ["apt-get", "update"],
+            check=True,
         )
         self._run(
             [
@@ -87,6 +94,7 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
                 "docker-buildx-plugin",
                 "docker-compose-plugin",
             ],
+            check=True,
         )
 
     def verify(self, system: System) -> bool:
