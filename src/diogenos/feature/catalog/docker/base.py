@@ -1,7 +1,7 @@
 """Define the Docker feature."""
 
+from diogenos.component.catalog.docker.engine import DockerEngine
 from diogenos.feature.base import Feature
-from diogenos.feature.catalog.docker.engine import DockerEngine
 
 
 class Docker(Feature):

@@ -130,6 +130,8 @@ class ArchGit(ArchComponentImplementation):
 class GitComponent(Component):
     """Represent the Git component."""
 
+    registry_id = "git"
+
     def __init__(
         self,
         run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,

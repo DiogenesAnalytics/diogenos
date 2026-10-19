@@ -1,7 +1,7 @@
 """Define the Git feature."""
 
+from diogenos.component.catalog.git.git import GitComponent
 from diogenos.feature.base import Feature
-from diogenos.feature.catalog.git.git import GitComponent
 
 
 class Git(Feature):

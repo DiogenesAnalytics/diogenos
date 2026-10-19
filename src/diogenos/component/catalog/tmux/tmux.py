@@ -121,6 +121,8 @@ class ArchTmux(ArchComponentImplementation):
 class TmuxPackage(Component):
     """Represent the Tmux package component."""
 
+    registry_id = "tmux"
+
     def __init__(
         self,
         run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,

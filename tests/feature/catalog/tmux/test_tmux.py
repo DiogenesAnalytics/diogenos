@@ -4,11 +4,11 @@ import subprocess
 
 import pytest
 
-from diogenos.feature.catalog.tmux.tmux import ArchTmux
-from diogenos.feature.catalog.tmux.tmux import DebianTmux
-from diogenos.feature.catalog.tmux.tmux import FedoraTmux
-from diogenos.feature.catalog.tmux.tmux import TmuxPackage
-from diogenos.feature.catalog.tmux.tmux import UbuntuTmux
+from diogenos.component.catalog.tmux.tmux import ArchTmux
+from diogenos.component.catalog.tmux.tmux import DebianTmux
+from diogenos.component.catalog.tmux.tmux import FedoraTmux
+from diogenos.component.catalog.tmux.tmux import TmuxPackage
+from diogenos.component.catalog.tmux.tmux import UbuntuTmux
 from diogenos.system.base import System
 from tests.feature.support import RunStub
 

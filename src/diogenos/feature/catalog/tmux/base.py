@@ -1,7 +1,7 @@
 """Define the Tmux feature."""
 
+from diogenos.component.catalog.tmux.tmux import TmuxPackage
 from diogenos.feature.base import Feature
-from diogenos.feature.catalog.tmux.tmux import TmuxPackage
 
 
 class Tmux(Feature):

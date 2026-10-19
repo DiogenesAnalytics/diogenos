@@ -6,8 +6,8 @@ import pytest
 
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
-from diogenos.feature.catalog.docker.engine import DockerEngine
-from diogenos.feature.catalog.docker.engine import UbuntuDockerEngine
+from diogenos.component.catalog.docker.engine import DockerEngine
+from diogenos.component.catalog.docker.engine import UbuntuDockerEngine
 from diogenos.resolver import Resolver
 from diogenos.system.base import System
 

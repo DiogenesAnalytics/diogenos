@@ -103,6 +103,8 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
 class DockerEngine(Component):
     """Represent the Docker Engine component."""
 
+    registry_id = "docker.engine"
+
     def __init__(
         self,
         run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,

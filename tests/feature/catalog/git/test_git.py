@@ -4,11 +4,11 @@ import subprocess
 
 import pytest
 
-from diogenos.feature.catalog.git.git import ArchGit
-from diogenos.feature.catalog.git.git import DebianGit
-from diogenos.feature.catalog.git.git import FedoraGit
-from diogenos.feature.catalog.git.git import GitComponent
-from diogenos.feature.catalog.git.git import UbuntuGit
+from diogenos.component.catalog.git.git import ArchGit
+from diogenos.component.catalog.git.git import DebianGit
+from diogenos.component.catalog.git.git import FedoraGit
+from diogenos.component.catalog.git.git import GitComponent
+from diogenos.component.catalog.git.git import UbuntuGit
 from diogenos.system.base import System
 from tests.feature.support import RunStub
 
