@@ -5,63 +5,12 @@ from typing import Tuple
 import pytest
 
 from diogenos.component import Component
-from diogenos.component import ComponentImplementation
 from diogenos.component import Dependency
 from diogenos.system.base import System
-
-
-class ComponentStub(Component):
-    """Provide a minimal component for testing."""
-
-    def __init__(
-        self,
-        satisfied: bool = False,
-    ) -> None:
-        """Initialize the component stub."""
-        self.satisfied = satisfied
-        self.implementation_stub = ComponentImplementationStub()
-
-    def is_satisfied(self, system: System) -> bool:
-        """Return whether the component is satisfied."""
-        return self.satisfied
-
-    def implementations(
-        self,
-    ) -> Tuple[ComponentImplementation, ...]:
-        """Return the component implementations."""
-        return (self.implementation_stub,)
-
-
-class ComponentImplementationStub(ComponentImplementation):
-    """Provide a minimal component implementation for testing."""
-
-    def supports(self, system: System) -> bool:
-        """Determine whether the implementation supports the system."""
-        return True
-
-    def install(self, system: System) -> None:
-        """Install the component."""
-        pass
-
-    def verify(self, system: System) -> bool:
-        """Verify the component."""
-        return True
-
-
-@pytest.fixture
-def component() -> ComponentStub:
-    """Create an unsatisfied component stub."""
-    return ComponentStub()
-
-
-@pytest.fixture
-def satisfied_component() -> ComponentStub:
-    """Create a satisfied component stub."""
-    return ComponentStub(satisfied=True)
+from tests.component.support import ComponentStub
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_component_is_abstract() -> None:
     """Test that Component cannot be instantiated directly."""
     with pytest.raises(TypeError):
@@ -69,7 +18,6 @@ def test_component_is_abstract() -> None:
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_component_is_satisfied(
     system: System,
     satisfied_component: ComponentStub,
@@ -79,7 +27,6 @@ def test_component_is_satisfied(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_component_is_not_satisfied(
     system: System,
     component: ComponentStub,
@@ -89,7 +36,6 @@ def test_component_is_not_satisfied(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_component_returns_implementation(
     component: ComponentStub,
 ) -> None:
@@ -100,7 +46,6 @@ def test_component_returns_implementation(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_component_has_no_dependencies_by_default(
     component: ComponentStub,
 ) -> None:
@@ -109,7 +54,6 @@ def test_component_has_no_dependencies_by_default(
 
 
 @pytest.mark.component
-@pytest.mark.feature
 def test_component_returns_declared_dependencies() -> None:
     """Test that a component returns its declared dependencies."""
     dependency = Dependency("GitComponent")
