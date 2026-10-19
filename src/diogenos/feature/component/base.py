@@ -2,6 +2,7 @@
 
 from abc import ABC
 from abc import abstractmethod
+from typing import Optional
 from typing import Tuple
 
 from diogenos.system.base import System
@@ -12,6 +13,8 @@ from .implementation.base import ComponentImplementation
 
 class Component(ABC):
     """Define a component that can be satisfied on a system."""
+
+    registry_id: Optional[str] = None
 
     def dependencies(self) -> Tuple[Dependency, ...]:
         """Return the dependencies of this component."""
