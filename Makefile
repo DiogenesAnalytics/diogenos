@@ -180,7 +180,7 @@ restart-containers: stop-containers containers
 lint: deptry isort black flake8 mypy
 
 # run full testing suite
-tests: pytest lint
+tests: lint pytest
 
 # run pytest in docker container
 pytest:
