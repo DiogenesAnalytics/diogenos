@@ -5,8 +5,8 @@ from diogenos.component import ComponentImplementation
 from diogenos.system.base import System
 
 
-class Resolver:
-    """Resolve component implementations."""
+class ImplementationResolver:
+    """Resolve implementations for components."""
 
     def resolve(
         self,
