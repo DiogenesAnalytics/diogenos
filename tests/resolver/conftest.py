@@ -1,6 +1,7 @@
 """Provide fixtures for resolver tests."""
 
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 from unittest.mock import Mock
 
@@ -32,7 +33,7 @@ def component_factory() -> Callable[..., ComponentStub]:
     """Provide a factory for creating component stubs."""
 
     def create_component(
-        registry_id: str = "stub",
+        registry_id: Optional[str] = "stub",
         dependencies: Tuple[Dependency, ...] = (),
     ) -> ComponentStub:
         """Create a component stub with the given dependencies."""

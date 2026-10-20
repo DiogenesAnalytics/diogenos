@@ -154,3 +154,18 @@ def test_resolve_components_with_circular_dependency(
         match="circular component dependency: a -> b -> a",
     ):
         dependency_resolver.resolve((component_a,))
+
+
+@pytest.mark.resolver
+def test_resolve_component_without_registry_id(
+    component_factory: Callable[..., ComponentStub],
+    dependency_resolver: DependencyResolver,
+) -> None:
+    """Raise an error when a component has no registry identifier."""
+    component = component_factory(registry_id=None)
+
+    with pytest.raises(
+        ValueError,
+        match="component ComponentStub has no registry identifier",
+    ):
+        dependency_resolver.resolve((component,))

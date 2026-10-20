@@ -1,5 +1,6 @@
 """Provide shared support for resolver tests."""
 
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import Component
@@ -33,7 +34,7 @@ class ComponentStub(Component):
     def __init__(
         self,
         implementations: Tuple[ComponentImplementation, ...] = (),
-        registry_id: str = "stub",
+        registry_id: Optional[str] = "stub",
         dependencies: Tuple[Dependency, ...] = (),
     ) -> None:
         """Initialize the component stub."""
