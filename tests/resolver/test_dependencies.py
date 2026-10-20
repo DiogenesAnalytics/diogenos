@@ -75,3 +75,31 @@ def test_resolve_component_with_transitive_dependencies(
 
     assert tuple(item.registry_id for item in resolved) == ("c", "b", "a")
     assert component_registry.get.call_count == 2
+
+
+@pytest.mark.resolver
+def test_resolve_components_with_shared_dependency(
+    component_factory: Callable[..., ComponentStub],
+    component_registry: Mock,
+    dependency_resolver: DependencyResolver,
+) -> None:
+    """Resolve a shared dependency only once."""
+    component_c = component_factory(registry_id="c")
+    component_a = component_factory(
+        registry_id="a",
+        dependencies=(Dependency("c"),),
+    )
+    component_b = component_factory(
+        registry_id="b",
+        dependencies=(Dependency("c"),),
+    )
+
+    component_classes = {
+        "c": lambda: component_c,
+    }
+    component_registry.get.side_effect = component_classes.__getitem__
+
+    resolved = dependency_resolver.resolve((component_a, component_b))
+
+    assert tuple(item.registry_id for item in resolved) == ("c", "a", "b")
+    assert component_registry.get.call_count == 2
