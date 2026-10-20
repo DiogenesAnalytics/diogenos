@@ -125,3 +125,32 @@ def test_resolve_component_with_unknown_dependency(
         match="unknown component identifier: unknown",
     ):
         dependency_resolver.resolve((component,))
+
+
+@pytest.mark.resolver
+def test_resolve_components_with_circular_dependency(
+    component_factory: Callable[..., ComponentStub],
+    component_registry: Mock,
+    dependency_resolver: DependencyResolver,
+) -> None:
+    """Raise an error when components have circular dependencies."""
+    component_a = component_factory(
+        registry_id="a",
+        dependencies=(Dependency("b"),),
+    )
+    component_b = component_factory(
+        registry_id="b",
+        dependencies=(Dependency("a"),),
+    )
+
+    component_classes = {
+        "a": lambda: component_a,
+        "b": lambda: component_b,
+    }
+    component_registry.get.side_effect = component_classes.__getitem__
+
+    with pytest.raises(
+        ValueError,
+        match="circular component dependency: a -> b -> a",
+    ):
+        dependency_resolver.resolve((component_a,))
