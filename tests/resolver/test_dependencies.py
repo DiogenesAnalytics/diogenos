@@ -103,3 +103,25 @@ def test_resolve_components_with_shared_dependency(
 
     assert tuple(item.registry_id for item in resolved) == ("c", "a", "b")
     assert component_registry.get.call_count == 2
+
+
+@pytest.mark.resolver
+def test_resolve_component_with_unknown_dependency(
+    component_factory: Callable[..., ComponentStub],
+    component_registry: Mock,
+    dependency_resolver: DependencyResolver,
+) -> None:
+    """Raise an error when a dependency is not registered."""
+    component = component_factory(
+        registry_id="example",
+        dependencies=(Dependency("unknown"),),
+    )
+    component_registry.get.side_effect = KeyError(
+        "unknown component identifier: unknown",
+    )
+
+    with pytest.raises(
+        KeyError,
+        match="unknown component identifier: unknown",
+    ):
+        dependency_resolver.resolve((component,))
