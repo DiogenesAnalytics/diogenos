@@ -9,12 +9,32 @@ from diogenos.system.base import System
 
 
 @pytest.mark.resolver
-def test_resolver_selects_ubuntu_docker_engine(
+def test_resolve_dependencies_returns_requested_component() -> None:
+    """Include the requested component in the resolved dependencies."""
+    resolver = Resolver()
+    component = DockerEngine()
+
+    components = resolver.resolve_dependencies((component,))
+
+    assert component in components
+    assert components[-1] is component
+
+
+@pytest.mark.resolver
+def test_resolve_implementation_selects_ubuntu_docker_engine(
     system: System,
 ) -> None:
     """Select the Ubuntu Docker implementation."""
+    resolver = Resolver()
     component = DockerEngine()
 
-    implementation = Resolver().resolve(component, system)
+    resolved_component = resolver.resolve_implementation(
+        component,
+        system,
+    )
 
-    assert isinstance(implementation, UbuntuDockerEngine)
+    assert resolved_component.component is component
+    assert isinstance(
+        resolved_component.implementation,
+        UbuntuDockerEngine,
+    )

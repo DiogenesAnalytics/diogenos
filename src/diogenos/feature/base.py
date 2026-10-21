@@ -26,19 +26,32 @@ class Feature:
         return self._components
 
     def is_satisfied(self, system: System) -> bool:
-        """Determine whether all components of the feature are satisfied."""
-        return all(component.is_satisfied(system) for component in self._components)
+        """Determine whether all components and their dependencies are satisfied."""
+        dependency_resolved_components = self._resolver.resolve_dependencies(
+            self._components,
+        )
+
+        return all(
+            component.is_satisfied(system)
+            for component in dependency_resolved_components
+        )
 
     def apply(self, system: System) -> None:
         """Apply the feature to bring the system into its desired state."""
-        if self.is_satisfied(system):
-            return
+        dependency_resolved_components = self._resolver.resolve_dependencies(
+            self._components,
+        )
 
-        for component in self._components:
+        for component in dependency_resolved_components:
             if component.is_satisfied(system):
                 continue
 
-            implementation = self._resolver.resolve(component, system)
+            resolved_component = self._resolver.resolve_implementation(
+                component,
+                system,
+            )
+
+            implementation = resolved_component.implementation
             implementation.install(system)
 
             if not implementation.verify(system):
