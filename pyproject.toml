@@ -8,6 +8,9 @@ authors = [
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
+dependencies = [
+    "click>=8.0",
+]
 homepage = "https://github.com/DiogenesAnalytics/diogenos"
 repository = "https://github.com/DiogenesAnalytics/diogenos"
 classifiers = [
@@ -16,6 +19,9 @@ classifiers = [
 
 [project.urls]
 Changelog = "https://github.com/DiogenesAnalytics/diogenos/releases"
+
+[project.scripts]
+diogenos = "diogenos.cli:main"
 
 [tool.poetry.group.dev]
 optional = true

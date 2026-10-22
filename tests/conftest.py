@@ -13,12 +13,11 @@ from diogenos.system.platform import Platform
 
 def pytest_configure(config: pytest.Config) -> None:
     """Configure pytest with custom markers."""
-    config.addinivalue_line("markers", "component: component module tests.")
-    config.addinivalue_line(
-        "markers", "e2e: end-to-end tests requiring a virtual machine."
-    )
+    config.addinivalue_line("markers", "cli: cli module tests.")
+    config.addinivalue_line("markers", "component: component package tests.")
+    config.addinivalue_line("markers", "e2e: full end-to-end tests.")
     config.addinivalue_line("markers", "feature: feature package tests.")
-    config.addinivalue_line("markers", "resolver: resolver module tests.")
+    config.addinivalue_line("markers", "resolver: resolver package tests.")
     config.addinivalue_line("markers", "system: system package tests.")
 
 
