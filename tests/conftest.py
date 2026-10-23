@@ -17,6 +17,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "component: component package tests.")
     config.addinivalue_line("markers", "e2e: full end-to-end tests.")
     config.addinivalue_line("markers", "feature: feature package tests.")
+    config.addinivalue_line("markers", "registry: registry module tests.")
     config.addinivalue_line("markers", "resolver: resolver package tests.")
     config.addinivalue_line("markers", "system: system package tests.")
 

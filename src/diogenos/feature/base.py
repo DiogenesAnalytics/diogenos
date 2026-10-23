@@ -11,6 +11,8 @@ from diogenos.system.base import System
 class Feature:
     """Represent a feature composed of components."""
 
+    registry_id: Optional[str] = None
+
     def __init__(
         self,
         components: Tuple[Component, ...],
@@ -56,7 +58,7 @@ class Feature:
 
             if not implementation.verify(system):
                 raise RuntimeError(
-                    f"installation failed for component " f"{type(component).__name__}",
+                    f"installation failed for component {type(component).__name__}",
                 )
 
         if not self.is_satisfied(system):

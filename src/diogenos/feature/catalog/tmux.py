@@ -8,6 +8,8 @@ from diogenos.feature.base import Feature
 class Tmux(Feature):
     """Represent the Tmux feature."""
 
+    registry_id = "tmux"
+
     def __init__(self) -> None:
         """Initialize the Tmux feature."""
         super().__init__(

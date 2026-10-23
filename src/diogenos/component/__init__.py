@@ -9,6 +9,7 @@ from .implementation.linux import DebianComponentImplementation
 from .implementation.linux import FedoraComponentImplementation
 from .implementation.linux import OpenSUSEComponentImplementation
 from .implementation.linux import UbuntuComponentImplementation
+from .registry import ComponentRegistry
 
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "ArchComponentImplementation",
     "Component",
     "ComponentImplementation",
+    "ComponentRegistry",
     "DebianComponentImplementation",
     "Dependency",
     "FedoraComponentImplementation",
