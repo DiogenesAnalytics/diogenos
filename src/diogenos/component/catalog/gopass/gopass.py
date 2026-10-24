@@ -10,6 +10,7 @@ from diogenos.component import ComponentImplementation
 from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.dependency import Dependency
 from diogenos.system.base import System
 
 
@@ -179,6 +180,10 @@ class GoPassPackage(Component):
     ) -> None:
         """Initialize the GoPass component."""
         self._run = run
+
+    def dependencies(self) -> Tuple[Dependency, ...]:
+        """Return the component dependencies."""
+        return (Dependency("gnupg"),)
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether GoPass is available."""
