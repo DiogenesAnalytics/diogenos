@@ -1,6 +1,7 @@
 """Define the DiogenOS command-line interface."""
 
 from typing import Callable
+from typing import Tuple
 from typing import cast
 
 import click
@@ -30,30 +31,54 @@ def list_features() -> None:
 
 
 @feature.command(name="check")
-@click.argument("registry_id")
-def check_feature(registry_id: str) -> None:
-    """Check whether a feature is satisfied."""
+@click.argument("registry_ids", nargs=-1)
+@click.option(
+    "--all",
+    "all_features",
+    is_flag=True,
+    help="Check all registered features.",
+)
+def check_feature(
+    registry_ids: Tuple[str, ...],
+    all_features: bool,
+) -> None:
+    """Check whether features are satisfied."""
+    if all_features and registry_ids:
+        raise click.UsageError("Specify either --all or feature IDs, not both.")
+
+    if not all_features and not registry_ids:
+        raise click.UsageError("Specify one or more feature IDs or use --all.")
+
     registry = FeatureRegistry()
 
-    try:
-        feature_class = registry.get(registry_id)
-    except KeyError:
-        click.echo(
-            f"Error: {registry_id} is not a registered feature.",
-            err=True,
-        )
-        raise click.exceptions.Exit(1) from None
+    if all_features:
+        registry_ids = registry.list()
 
-    feature_factory = cast(Callable[[], Feature], feature_class)
-    selected_feature = feature_factory()
     system = SystemDetector().detect()
+    all_satisfied = True
 
-    if selected_feature.is_satisfied(system):
-        click.echo(f"Feature {registry_id!r} is satisfied.")
-        return
+    for registry_id in registry_ids:
+        try:
+            feature_class = registry.get(registry_id)
+        except KeyError:
+            click.echo(
+                f"Error: {registry_id} is not a registered feature.",
+                err=True,
+            )
+            all_satisfied = False
+            continue
 
-    click.echo(f"Feature {registry_id!r} is not satisfied.")
-    raise click.exceptions.Exit(1)
+        feature_factory = cast(Callable[[], Feature], feature_class)
+        selected_feature = feature_factory()
+
+        if selected_feature.is_satisfied(system):
+            click.echo(f"Feature {registry_id!r} is satisfied.")
+        else:
+            click.echo(f"Feature {registry_id!r} is not satisfied.")
+            all_satisfied = False
+
+    if not all_satisfied:
+        raise click.exceptions.Exit(1)
 
 
 if __name__ == "__main__":
