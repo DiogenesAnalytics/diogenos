@@ -1,0 +1,1 @@
+"""Provide GnuPG components."""
