@@ -11,6 +11,7 @@ from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.dependency import Dependency
+from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
@@ -34,13 +35,7 @@ class UbuntuGnuPG(UbuntuComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that GnuPG is available."""
-        result = self._run(
-            ["gpg", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["gpg", "--version"])
 
 
 class DebianGnuPG(DebianComponentImplementation):
@@ -63,13 +58,7 @@ class DebianGnuPG(DebianComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that GnuPG is available."""
-        result = self._run(
-            ["gpg", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["gpg", "--version"])
 
 
 class FedoraGnuPG(FedoraComponentImplementation):
@@ -91,13 +80,7 @@ class FedoraGnuPG(FedoraComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that GnuPG is available."""
-        result = self._run(
-            ["gpg", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["gpg", "--version"])
 
 
 class ArchGnuPG(ArchComponentImplementation):
@@ -119,13 +102,7 @@ class ArchGnuPG(ArchComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that GnuPG is available."""
-        result = self._run(
-            ["gpg", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["gpg", "--version"])
 
 
 class GnuPGPackage(Component):
@@ -146,13 +123,7 @@ class GnuPGPackage(Component):
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether GnuPG is available."""
-        result = self._run(
-            ["gpg", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["gpg", "--version"])
 
     def implementations(
         self,

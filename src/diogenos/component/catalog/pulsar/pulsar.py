@@ -12,6 +12,7 @@ from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import DebianComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
@@ -83,14 +84,7 @@ class UbuntuPulsar(UbuntuComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Pulsar is available."""
-        result = self._run(
-            ["pulsar", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-
-        return result.returncode == 0
+        return validate_command(self._run, ["pulsar", "--version"])
 
 
 class DebianPulsar(DebianComponentImplementation):
@@ -126,14 +120,7 @@ class PulsarPackage(Component):
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether Pulsar is available."""
-        result = self._run(
-            ["pulsar", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-
-        return result.returncode == 0
+        return validate_command(self._run, ["pulsar", "--version"])
 
     def implementations(
         self,

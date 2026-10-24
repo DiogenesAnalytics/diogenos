@@ -10,6 +10,7 @@ from diogenos.component import ComponentImplementation
 from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
@@ -30,13 +31,7 @@ class UbuntuTmux(UbuntuComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Tmux is available."""
-        result = self._run(
-            ["tmux", "-V"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["tmux", "-V"])
 
 
 class DebianTmux(DebianComponentImplementation):
@@ -56,13 +51,7 @@ class DebianTmux(DebianComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Tmux is available."""
-        result = self._run(
-            ["tmux", "-V"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["tmux", "-V"])
 
 
 class FedoraTmux(FedoraComponentImplementation):
@@ -81,13 +70,7 @@ class FedoraTmux(FedoraComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Tmux is available."""
-        result = self._run(
-            ["tmux", "-V"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["tmux", "-V"])
 
 
 class ArchTmux(ArchComponentImplementation):
@@ -109,13 +92,7 @@ class ArchTmux(ArchComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Tmux is available."""
-        result = self._run(
-            ["tmux", "-V"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["tmux", "-V"])
 
 
 class TmuxPackage(Component):
@@ -132,13 +109,7 @@ class TmuxPackage(Component):
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether Tmux is available."""
-        result = self._run(
-            ["tmux", "-V"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["tmux", "-V"])
 
     def implementations(
         self,

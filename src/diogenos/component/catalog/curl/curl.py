@@ -10,6 +10,7 @@ from diogenos.component import ComponentImplementation
 from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
@@ -33,13 +34,7 @@ class UbuntuCurl(UbuntuComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Curl is available."""
-        result = self._run(
-            ["curl", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["curl", "--version"])
 
 
 class DebianCurl(DebianComponentImplementation):
@@ -80,17 +75,11 @@ class FedoraCurl(FedoraComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Curl is available."""
-        result = self._run(
-            ["curl", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["curl", "--version"])
 
 
 class ArchCurl(ArchComponentImplementation):
-    """Define the Arch Linux implementation of Curl."""
+    """Define the Arch Linux Curl implementation."""
 
     def __init__(
         self,
@@ -108,13 +97,7 @@ class ArchCurl(ArchComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Curl is available."""
-        result = self._run(
-            ["curl", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["curl", "--version"])
 
 
 class CurlPackage(Component):
@@ -131,13 +114,7 @@ class CurlPackage(Component):
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether Curl is available."""
-        result = self._run(
-            ["curl", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["curl", "--version"])
 
     def implementations(
         self,

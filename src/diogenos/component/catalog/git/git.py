@@ -10,6 +10,7 @@ from diogenos.component import ComponentImplementation
 from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
@@ -33,13 +34,7 @@ class UbuntuGit(UbuntuComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Git is available."""
-        result = self._run(
-            ["git", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["git", "--version"])
 
 
 class DebianGit(DebianComponentImplementation):
@@ -62,13 +57,7 @@ class DebianGit(DebianComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Git is available."""
-        result = self._run(
-            ["git", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["git", "--version"])
 
 
 class FedoraGit(FedoraComponentImplementation):
@@ -90,13 +79,7 @@ class FedoraGit(FedoraComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Git is available."""
-        result = self._run(
-            ["git", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["git", "--version"])
 
 
 class ArchGit(ArchComponentImplementation):
@@ -118,13 +101,7 @@ class ArchGit(ArchComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Git is available."""
-        result = self._run(
-            ["git", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["git", "--version"])
 
 
 class GitComponent(Component):
@@ -141,13 +118,7 @@ class GitComponent(Component):
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether Git is available."""
-        result = self._run(
-            ["git", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        return result.returncode == 0
+        return validate_command(self._run, ["git", "--version"])
 
     def implementations(
         self,

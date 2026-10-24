@@ -7,6 +7,7 @@ from typing import Tuple
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
@@ -99,13 +100,10 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
 
     def verify(self, system: System) -> bool:
         """Verify that Docker Engine is installed correctly."""
-        result = self._run(
+        return validate_command(
+            self._run,
             ["docker", "run", "hello-world"],
-            capture_output=True,
-            check=False,
-            text=True,
         )
-        return result.returncode == 0
 
 
 class DockerEngine(Component):
@@ -122,13 +120,10 @@ class DockerEngine(Component):
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether Docker Engine is usable."""
-        result = self._run(
+        return validate_command(
+            self._run,
             ["docker", "run", "hello-world"],
-            capture_output=True,
-            check=False,
-            text=True,
         )
-        return result.returncode == 0
 
     def implementations(
         self,
