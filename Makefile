@@ -1,38 +1,41 @@
 .PHONY: all build-jupyter build-tests build-final jupyter pause address containers \
         list-containers stop-containers restart-containers lint tests pytest \
         deptry isort black flake8 mypy nox shell clear-nb clean install-act \
-        check-act run-act-tests test-py-version vagrant-install vagrant-check
+        check-act run-act-tests test-py-version vagrant-install vagrant-check \
+				vagrant-provider-install vagrant-provider-check
 
 # Usage:
-# make                    # just alias to containers command
-# make build-jupyter      # build jupyter docker image
-# make build-tests        # build testing docker image
-# make build-final        # build final docker image
-# make jupyter            # startup Docker container running Jupyter server
-# make pause              # pause PSECS (to pause between commands)
-# make address            # get Docker container address/port
-# make containers         # launch all Docker containers
-# make list-containers    # list all running containers
-# make stop-containers    # simply stops all running Docker containers
-# make restart-containers # restart all containers
-# make lint               # run linters
-# make tests              # run full testing suite
-# make pytest             # run pytest in docker container
-# make deptry             # run deptry in docker container
-# make isort              # run isort in docker container
-# make black              # run black in docker container
-# make flake8             # run flake8 in docker container
-# make mypy               # run mypy in docker container
-# make nox                # run nox sessions in docker container
-# make shell              # create interactive shell in docker container
-# make clear-nb           # simply clears Jupyter notebook output
-# make clean              # combines all clearing commands into one
-# make install-act        # install act command
-# make check-act          # check if act is installed
-# make run-cat-tests      # run github action tests locally
-# make test-py-version    # print default python test version
-# make vagrant-install    # install Vagrant from the official HashiCorp repository
-# make vagrant-check      # check if Vagrant is installed
+# make                           # just alias to containers command
+# make build-jupyter             # build jupyter docker image
+# make build-tests               # build testing docker image
+# make build-final               # build final docker image
+# make jupyter                   # startup Docker container running Jupyter server
+# make pause                     # pause PSECS (to pause between commands)
+# make address                   # get Docker container address/port
+# make containers                # launch all Docker containers
+# make list-containers           # list all running containers
+# make stop-containers           # simply stops all running Docker containers
+# make restart-containers        # restart all containers
+# make lint                      # run linters
+# make tests                     # run full testing suite
+# make pytest                    # run pytest in docker container
+# make deptry                    # run deptry in docker container
+# make isort                     # run isort in docker container
+# make black                     # run black in docker container
+# make flake8                    # run flake8 in docker container
+# make mypy                      # run mypy in docker container
+# make nox                       # run nox sessions in docker container
+# make shell                     # create interactive shell in docker container
+# make clear-nb                  # simply clears Jupyter notebook output
+# make clean                     # combines all clearing commands into one
+# make install-act               # install act command
+# make check-act                 # check if act is installed
+# make run-cat-tests             # run github action tests locally
+# make test-py-version           # print default python test version
+# make vagrant-install           # install Vagrant
+# make vagrant-check             # check if Vagrant is installed
+# make vagrant-provider-install  # install selected Vagrant provider
+# make vagrant-provider-check    # check selected Vagrant provider
 
 ################################################################################
 # GLOBALS                                                                      #
@@ -69,6 +72,45 @@ TSTIMG_USED = $(if $(filter true,$(USE_FNL)),${DCKRIMG_FINAL},${DCKRIMG_TESTS})
 
 # jupyter nbconvert vars
 NBCLER = jupyter nbconvert --clear-output --inplace
+
+# vagrant provider
+VAGRANT_PROVIDER ?= virtualbox
+
+# Install VirtualBox
+define VAGRANT_INSTALL_VIRTUALBOX
+	sudo apt-get install -y virtualbox
+endef
+
+# Install KVM/libvirt
+define VAGRANT_INSTALL_LIBVIRT
+	sudo apt-get install -y qemu-kvm libvirt-daemon-system \
+	  libvirt-clients bridge-utils cpu-checker && \
+	vagrant plugin install vagrant-libvirt
+endef
+
+# Check VirtualBox
+define VAGRANT_CHECK_VIRTUALBOX
+	command -v VBoxManage >/dev/null 2>&1 && \
+	VBoxManage --version && \
+	lsmod | grep -q '^vboxdrv'
+endef
+
+# Check KVM/libvirt
+define VAGRANT_CHECK_LIBVIRT
+	command -v virsh >/dev/null 2>&1 && \
+	virsh --version && \
+	virsh list --all >/dev/null 2>&1 && \
+	vagrant plugin list | grep -q '^vagrant-libvirt '
+endef
+
+# Dispatch to the selected provider command
+define VAGRANT_PROVIDER_COMMAND
+$(if $(filter virtualbox,$(VAGRANT_PROVIDER)), \
+  $(call $(1)_VIRTUALBOX), \
+  $(if $(filter libvirt,$(VAGRANT_PROVIDER)), \
+    $(call $(1)_LIBVIRT), \
+    $(error Unsupported VAGRANT_PROVIDER: $(VAGRANT_PROVIDER))))
+endef
 
 # Define the docker build command with optional --no-cache
 define DOCKER_BUILD
@@ -278,3 +320,12 @@ vagrant-check:
 	@ command -v vagrant >/dev/null 2>&1 && \
 	  { echo "Vagrant is installed:"; vagrant --version; } || \
 	  { echo "Vagrant is not installed. Please install it with: make install-vagrant"; exit 1; }
+
+# Install selected Vagrant provider
+vagrant-provider-install:
+	@sudo apt-get update
+	@$(call VAGRANT_PROVIDER_COMMAND,VAGRANT_INSTALL)
+
+# Check selected Vagrant provider
+vagrant-provider-check:
+	@$(call VAGRANT_PROVIDER_COMMAND,VAGRANT_CHECK)
