@@ -1,7 +1,7 @@
 .PHONY: all build-jupyter build-tests build-final jupyter pause address containers \
         list-containers stop-containers restart-containers lint tests pytest \
         deptry isort black flake8 mypy nox shell clear-nb clean install-act \
-        check-act run-act-tests test-py-version
+        check-act run-act-tests test-py-version vagrant-install vagrant-check
 
 # Usage:
 # make                    # just alias to containers command
@@ -31,7 +31,8 @@
 # make check-act          # check if act is installed
 # make run-cat-tests      # run github action tests locally
 # make test-py-version    # print default python test version
-
+# make vagrant-install    # install Vagrant from the official HashiCorp repository
+# make vagrant-check      # check if Vagrant is installed
 
 ################################################################################
 # GLOBALS                                                                      #
@@ -253,3 +254,27 @@ run-act-tests: check-act
 # get default python version
 test-py-version:
 	@ ${DCKRTST} ${TSTIMG_USED} python --version
+
+################################################################################
+# VAGRANT                                                                      #
+################################################################################
+
+# Install Vagrant from the official HashiCorp repository
+vagrant-install:
+	@ echo "Installing Vagrant..."
+	@ sudo apt-get update
+	@ sudo apt-get install -y wget gpg
+	@ wget -O- https://apt.releases.hashicorp.com/gpg | \
+	  sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+	@ REPO_LINE="deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+	  https://apt.releases.hashicorp.com $$(. /etc/os-release && \
+	  echo "$${UBUNTU_CODENAME:-$${VERSION_CODENAME}}") main"; \
+	  echo "$${REPO_LINE}" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+	@ sudo apt-get update
+	@ sudo apt-get install -y vagrant
+
+# Check if Vagrant is installed
+vagrant-check:
+	@ command -v vagrant >/dev/null 2>&1 && \
+	  { echo "Vagrant is installed:"; vagrant --version; } || \
+	  { echo "Vagrant is not installed. Please install it with: make install-vagrant"; exit 1; }
