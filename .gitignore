@@ -9,3 +9,8 @@
 /src/*.egg-info/
 __pycache__/
 *.ipynb_checkpoints
+
+# E2E virtual machines
+/.vagrant/
+/.vagrant-box/
+/diogenos-e2e.box

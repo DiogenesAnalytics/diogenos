@@ -2,7 +2,8 @@
         list-containers stop-containers restart-containers lint tests pytest \
         deptry isort black flake8 mypy nox shell clear-nb clean install-act \
         check-act run-act-tests test-py-version vagrant-install vagrant-check \
-				vagrant-provider-install vagrant-provider-check
+        vagrant-provider-install vagrant-provider-check e2e-box-build \
+        e2e-box-clean
 
 # Usage:
 # make                           # just alias to containers command
@@ -36,6 +37,8 @@
 # make vagrant-check             # check if Vagrant is installed
 # make vagrant-provider-install  # install selected Vagrant provider
 # make vagrant-provider-check    # check selected Vagrant provider
+# make e2e-box-build             # build and register the E2E VM box
+# make e2e-box-clean             # remove the generated E2E box package file
 
 ################################################################################
 # GLOBALS                                                                      #
@@ -110,6 +113,70 @@ $(if $(filter virtualbox,$(VAGRANT_PROVIDER)), \
   $(if $(filter libvirt,$(VAGRANT_PROVIDER)), \
     $(call $(1)_LIBVIRT), \
     $(error Unsupported VAGRANT_PROVIDER: $(VAGRANT_PROVIDER))))
+endef
+
+# E2E virtual machine configuration
+E2E_VAGRANT_PROVIDER ?= libvirt
+E2E_BOX_NAME := diogenos-e2e
+E2E_BOX_FILE := $(CURDIR)/diogenos-e2e.box
+E2E_BOX_VAGRANTFILE := Vagrantfile.box
+E2E_BOX_DOTFILE_PATH := .vagrant-box
+E2E_VAGRANTFILE := Vagrantfile.e2e
+E2E_DEBUG ?= false
+
+# Run a Vagrant command using the E2E box build configuration
+define E2E_BOX_VAGRANT
+	VAGRANT_DOTFILE_PATH="$(E2E_BOX_DOTFILE_PATH)" \
+	VAGRANT_VAGRANTFILE="$(E2E_BOX_VAGRANTFILE)" \
+	vagrant $(1)
+endef
+
+# Run a Vagrant command using the E2E test configuration
+define E2E_VAGRANT
+	VAGRANT_VAGRANTFILE="$(E2E_VAGRANTFILE)" \
+	vagrant $(1)
+endef
+
+# Verify the E2E box is registered with Vagrant
+define E2E_CHECK_BOX
+	vagrant box list | grep -F "$(E2E_BOX_NAME) ($(E2E_VAGRANT_PROVIDER),"
+endef
+
+# Verify the E2E box build environment
+define E2E_VERIFY_BOX
+	$(call E2E_BOX_VAGRANT,ssh -c \
+	  'cd /diogenos && /home/vagrant/.local/bin/poetry run pytest --collect-only -q')
+endef
+
+# Build and register the reusable E2E box
+define E2E_BUILD_BOX
+	set -eu; \
+	cleanup() { \
+	  $(call E2E_BOX_VAGRANT,destroy -f) >/dev/null 2>&1 || true; \
+	}; \
+	$(if $(filter true,$(E2E_DEBUG)), \
+	  echo "==> E2E debug mode enabled; preserving the build VM."; , \
+	  trap cleanup EXIT; \
+	) \
+	echo "==> Starting E2E box build VM..."; \
+	$(call E2E_BOX_VAGRANT,up --provision --provider="$(E2E_VAGRANT_PROVIDER)"); \
+	echo "==> Verifying the installed environment..."; \
+	$(call E2E_VERIFY_BOX); \
+	echo "==> Halting the build VM..."; \
+	$(call E2E_BOX_VAGRANT,halt); \
+	echo "==> Packaging the E2E box..."; \
+	$(call E2E_BOX_VAGRANT,package --output "$(E2E_BOX_FILE)"); \
+	echo "==> Registering the E2E box..."; \
+	vagrant box add --force "$(E2E_BOX_NAME)" "$(E2E_BOX_FILE)" \
+	  --provider="$(E2E_VAGRANT_PROVIDER)"; \
+	echo "==> Removing the imported box artifact..."; \
+	rm -f "$(E2E_BOX_FILE)"; \
+	echo "==> E2E box is ready."
+endef
+
+# Remove the generated E2E box package file
+define E2E_CLEAN_BOX
+	rm -f "$(E2E_BOX_FILE)"
 endef
 
 # Define the docker build command with optional --no-cache
@@ -329,3 +396,12 @@ vagrant-provider-install:
 # Check selected Vagrant provider
 vagrant-provider-check:
 	@$(call VAGRANT_PROVIDER_COMMAND,VAGRANT_CHECK)
+
+# Build and register the E2E box
+e2e-box-build:
+	@$(E2E_BUILD_BOX)
+
+# Remove the generated E2E box package file
+e2e-box-clean:
+	@echo "==> Removing generated E2E box artifact..."
+	@$(E2E_CLEAN_BOX)
