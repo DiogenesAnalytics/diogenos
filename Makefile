@@ -3,7 +3,7 @@
         deptry isort black flake8 mypy nox shell clear-nb clean install-act \
         check-act run-act-tests test-py-version vagrant-install vagrant-check \
         vagrant-provider-install vagrant-provider-check e2e-box-build \
-        e2e-box-clean
+        e2e-box-clean e2e-tests
 
 # Usage:
 # make                           # just alias to containers command
@@ -39,6 +39,7 @@
 # make vagrant-provider-check    # check selected Vagrant provider
 # make e2e-box-build             # build and register the E2E VM box
 # make e2e-box-clean             # remove the generated E2E box package file
+# make e2e-tests                 # run E2E tests inside a Vagrant VM
 
 ################################################################################
 # GLOBALS                                                                      #
@@ -139,7 +140,7 @@ endef
 
 # Verify the E2E box is registered with Vagrant
 define E2E_CHECK_BOX
-	vagrant box list | grep -F "$(E2E_BOX_NAME) ($(E2E_VAGRANT_PROVIDER),"
+	vagrant box list | grep -E "^$(E2E_BOX_NAME)[[:space:]]+\\($(E2E_VAGRANT_PROVIDER),"
 endef
 
 # Verify the E2E box build environment
@@ -177,6 +178,30 @@ endef
 # Remove the generated E2E box package file
 define E2E_CLEAN_BOX
 	rm -f "$(E2E_BOX_FILE)"
+endef
+
+# Run E2E tests inside a disposable Vagrant VM
+define E2E_RUN_TESTS
+	set -eu; \
+	$(call E2E_CHECK_BOX) >/dev/null || { \
+	  echo "E2E box '$(E2E_BOX_NAME)' is not registered."; \
+	  echo "Run 'make e2e-box-build' first."; \
+	  exit 1; \
+	}; \
+	cleanup() { \
+	  $(call E2E_VAGRANT,destroy -f) >/dev/null 2>&1 || true; \
+	}; \
+	$(if $(filter true,$(E2E_DEBUG)), \
+	  echo "==> E2E debug mode enabled; preserving the test VM."; , \
+	  trap cleanup EXIT; \
+	) \
+	echo "==> Starting E2E test VM..."; \
+	$(call E2E_VAGRANT,up --provider="$(E2E_VAGRANT_PROVIDER)"); \
+	echo "==> Synchronizing project files..."; \
+	$(call E2E_VAGRANT,rsync); \
+	echo "==> Running E2E tests..."; \
+	$(call E2E_VAGRANT,ssh -c \
+	  'cd /diogenos && DIOGENOS_E2E=1 /home/vagrant/.local/bin/poetry run pytest -m e2e')
 endef
 
 # Define the docker build command with optional --no-cache
@@ -405,3 +430,7 @@ e2e-box-build:
 e2e-box-clean:
 	@echo "==> Removing generated E2E box artifact..."
 	@$(E2E_CLEAN_BOX)
+
+# Run E2E tests inside a disposable Vagrant VM
+e2e-tests:
+	@$(E2E_RUN_TESTS)
