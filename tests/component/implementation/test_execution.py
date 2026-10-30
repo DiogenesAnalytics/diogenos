@@ -1,112 +1,36 @@
 """Test command execution utilities."""
 
-import subprocess
-from unittest.mock import Mock
-
-import pytest
 from pytest import MonkeyPatch
 
-from diogenos.component.implementation.execution import CommandRunner
+from diogenos.component.implementation.execution import privileged_command
 
 
-@pytest.fixture
-def run() -> Mock:
-    """Provide a mocked subprocess runner."""
-    return Mock(
-        return_value=subprocess.CompletedProcess(
-            args=["example"],
-            returncode=0,
-            stdout="",
-            stderr="",
-        )
-    )
-
-
-def test_run_without_privileges(
-    run: Mock,
-    monkeypatch: MonkeyPatch,
-) -> None:
-    """Execute ordinary commands without privilege escalation."""
-    monkeypatch.setattr("os.geteuid", lambda: 1000)
-    runner = CommandRunner(run=run)
-
-    runner.run(["example", "--version"], check=True)
-
-    run.assert_called_once_with(
-        ["example", "--version"],
-        check=True,
-        capture_output=False,
-        text=False,
-    )
-
-
-def test_run_privileged_as_root(
-    run: Mock,
-    monkeypatch: MonkeyPatch,
-) -> None:
-    """Execute privileged commands directly when running as root."""
+def test_command_as_root(monkeypatch: MonkeyPatch) -> None:
+    """Return the original command when running as root."""
     monkeypatch.setattr("os.geteuid", lambda: 0)
-    runner = CommandRunner(run=run)
 
-    runner.run(["apt-get", "update"], check=True, privileged=True)
+    command = privileged_command(["apt-get", "update"])
 
-    run.assert_called_once_with(
-        ["apt-get", "update"],
-        check=True,
-        capture_output=False,
-        text=False,
-    )
+    assert command == ["apt-get", "update"]
 
 
-def test_run_privileged_as_non_root(
-    run: Mock,
+def test_command_as_non_root(monkeypatch: MonkeyPatch) -> None:
+    """Prefix privileged commands with sudo when not running as root."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+
+    command = privileged_command(["apt-get", "update"])
+
+    assert command == ["sudo", "apt-get", "update"]
+
+
+def test_command_does_not_modify_input(
     monkeypatch: MonkeyPatch,
 ) -> None:
-    """Use sudo for privileged commands when not running as root."""
-    monkeypatch.setattr("os.geteuid", lambda: 1000)
-    runner = CommandRunner(run=run)
+    """Leave the original command unchanged."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
+    original = ["apt-get", "update"]
 
-    runner.run(["apt-get", "update"], check=True, privileged=True)
+    command = privileged_command(original)
 
-    run.assert_called_once_with(
-        ["sudo", "apt-get", "update"],
-        check=True,
-        capture_output=False,
-        text=False,
-    )
-
-
-def test_run_with_input(
-    run: Mock,
-    monkeypatch: MonkeyPatch,
-) -> None:
-    """Forward input while using privilege escalation."""
-    monkeypatch.setattr("os.geteuid", lambda: 1000)
-    runner = CommandRunner(run=run)
-
-    runner.run(
-        ["tee", "/etc/example.conf"],
-        input="example configuration\n",
-        check=True,
-        capture_output=True,
-        text=True,
-        privileged=True,
-    )
-
-    run.assert_called_once_with(
-        ["sudo", "tee", "/etc/example.conf"],
-        check=True,
-        capture_output=True,
-        text=True,
-        input="example configuration\n",
-    )
-
-
-def test_run_returns_completed_process(run: Mock) -> None:
-    """Return the result from the underlying command runner."""
-    runner = CommandRunner(run=run)
-
-    result = runner.run(["example"])
-
-    assert result.returncode == 0
-    assert result.stdout == ""
+    assert command == original
+    assert command is not original
