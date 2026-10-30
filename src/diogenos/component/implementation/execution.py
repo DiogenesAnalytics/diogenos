@@ -25,12 +25,22 @@ class CommandRunner:
         check: bool = False,
         capture_output: bool = False,
         text: bool = False,
+        input: Optional[str] = None,
     ) -> subprocess.CompletedProcess[str]:
         """Execute a command, optionally with elevated privileges."""
         executable = list(command)
 
         if privileged and os.geteuid() != 0:
             executable.insert(0, "sudo")
+
+        if input is not None:
+            return self._run(
+                executable,
+                check=check,
+                capture_output=capture_output,
+                text=text,
+                input=input,
+            )
 
         return self._run(
             executable,

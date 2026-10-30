@@ -76,6 +76,32 @@ def test_run_privileged_as_non_root(
     )
 
 
+def test_run_with_input(
+    run: Mock,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Forward input while using privilege escalation."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+    runner = CommandRunner(run=run)
+
+    runner.run(
+        ["tee", "/etc/example.conf"],
+        input="example configuration\n",
+        check=True,
+        capture_output=True,
+        text=True,
+        privileged=True,
+    )
+
+    run.assert_called_once_with(
+        ["sudo", "tee", "/etc/example.conf"],
+        check=True,
+        capture_output=True,
+        text=True,
+        input="example configuration\n",
+    )
+
+
 def test_run_returns_completed_process(run: Mock) -> None:
     """Return the result from the underlying command runner."""
     runner = CommandRunner(run=run)
