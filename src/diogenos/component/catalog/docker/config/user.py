@@ -9,6 +9,7 @@ from typing import Tuple
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.implementation.execution import prepare_command
 from diogenos.system.base import System
 
 
@@ -66,13 +67,16 @@ class UbuntuDockerUserConfig(UbuntuComponentImplementation):
             != 0
         ):
             self._run(
-                ["groupadd", "docker"],
+                prepare_command(["groupadd", "docker"], privileged=True),
                 check=True,
             )
 
         if not _is_satisfied(self._run, self._user):
             self._run(
-                ["usermod", "-aG", "docker", self._user],
+                prepare_command(
+                    ["usermod", "-aG", "docker", self._user],
+                    privileged=True,
+                ),
                 check=True,
             )
 

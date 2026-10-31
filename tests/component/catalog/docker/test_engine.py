@@ -3,6 +3,7 @@
 import subprocess
 
 import pytest
+from pytest import MonkeyPatch
 
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.catalog.docker.engine import DockerEngine
@@ -22,7 +23,7 @@ def test_docker_engine_is_satisfied(
     assert component.is_satisfied(system) is True
     assert run_stub.calls == [
         (
-            ["docker", "run", "hello-world"],
+            ["docker", "info"],
             {
                 "capture_output": True,
                 "check": False,
@@ -68,8 +69,10 @@ def test_ubuntu_docker_engine_is_ubuntu_implementation() -> None:
 def test_ubuntu_docker_engine_installs_docker(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that UbuntuDockerEngine installs Docker Engine."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = UbuntuDockerEngine(run=run_stub)
 
     implementation.install(system)
@@ -116,6 +119,78 @@ def test_ubuntu_docker_engine_installs_docker(
         ],
         ["apt-get", "update"],
         [
+            "apt-get",
+            "install",
+            "-y",
+            "docker-ce",
+            "docker-ce-cli",
+            "containerd.io",
+            "docker-buildx-plugin",
+            "docker-compose-plugin",
+        ],
+    ]
+
+
+@pytest.mark.component
+def test_ubuntu_docker_engine_installs_docker_with_sudo(
+    system: System,
+    run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Verify that Docker Engine installation uses sudo when not root."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+    implementation = UbuntuDockerEngine(run=run_stub)
+
+    implementation.install(system)
+
+    assert [command for command, _ in run_stub.calls] == [
+        ["sudo", "apt-get", "update"],
+        [
+            "sudo",
+            "apt-get",
+            "install",
+            "-y",
+            "ca-certificates",
+            "curl",
+        ],
+        [
+            "sudo",
+            "install",
+            "-m",
+            "0755",
+            "-d",
+            "/etc/apt/keyrings",
+        ],
+        [
+            "sudo",
+            "curl",
+            "-fsSL",
+            "https://download.docker.com/linux/ubuntu/gpg",
+            "-o",
+            "/etc/apt/keyrings/docker.asc",
+        ],
+        [
+            "sudo",
+            "chmod",
+            "a+r",
+            "/etc/apt/keyrings/docker.asc",
+        ],
+        [
+            "sudo",
+            "sh",
+            "-c",
+            (
+                "echo "
+                "'deb [arch=amd64 "
+                "signed-by=/etc/apt/keyrings/docker.asc] "
+                "https://download.docker.com/linux/ubuntu "
+                "noble stable' "
+                "> /etc/apt/sources.list.d/docker.list"
+            ),
+        ],
+        ["sudo", "apt-get", "update"],
+        [
+            "sudo",
             "apt-get",
             "install",
             "-y",

@@ -2,6 +2,7 @@
 
 import pytest
 
+from diogenos.component.catalog.docker.config.user import DockerUserConfig
 from diogenos.component.catalog.docker.engine import DockerEngine
 from diogenos.feature.catalog.docker import Docker
 
@@ -11,5 +12,6 @@ def test_docker_contains_docker_engine() -> None:
     """Verify that the Docker feature contains the Docker Engine component."""
     feature = Docker()
 
-    assert len(feature.components) == 1
+    assert len(feature.components) == 2
     assert isinstance(feature.components[0], DockerEngine)
+    assert isinstance(feature.components[1], DockerUserConfig)

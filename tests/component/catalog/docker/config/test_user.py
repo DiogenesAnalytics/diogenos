@@ -8,6 +8,7 @@ from typing import List
 from typing import Tuple
 
 import pytest
+from pytest import MonkeyPatch
 
 from diogenos.component.catalog.docker.config.user import DockerUserConfig
 from diogenos.component.catalog.docker.config.user import UbuntuDockerUserConfig
@@ -116,8 +117,10 @@ def test_implementations_returns_ubuntu_implementation() -> None:
 def test_install_creates_group_and_adds_user(
     system: System,
     run_stub_factory: Callable[..., DockerUserRunStub],
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Test installation creates the group and adds the user."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
     run_stub = run_stub_factory(
         group_exists=False,
         user_in_group=False,
@@ -131,16 +134,18 @@ def test_install_creates_group_and_adds_user(
 
     commands = [command for command, _ in run_stub.calls]
 
-    assert ["groupadd", "docker"] in commands
-    assert ["usermod", "-aG", "docker", "testuser"] in commands
+    assert ["sudo", "groupadd", "docker"] in commands
+    assert ["sudo", "usermod", "-aG", "docker", "testuser"] in commands
 
 
 @pytest.mark.component
 def test_install_does_not_create_existing_group(
     system: System,
     run_stub_factory: Callable[..., DockerUserRunStub],
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Test installation does not recreate the Docker group."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
     run_stub = run_stub_factory(user_in_group=False)
     implementation = UbuntuDockerUserConfig(
         run=run_stub,
@@ -151,16 +156,18 @@ def test_install_does_not_create_existing_group(
 
     commands = [command for command, _ in run_stub.calls]
 
-    assert ["groupadd", "docker"] not in commands
-    assert ["usermod", "-aG", "docker", "testuser"] in commands
+    assert ["sudo", "groupadd", "docker"] not in commands
+    assert ["sudo", "usermod", "-aG", "docker", "testuser"] in commands
 
 
 @pytest.mark.component
 def test_install_does_not_add_existing_member(
     system: System,
     run_stub_factory: Callable[..., DockerUserRunStub],
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Test installation does not modify existing group membership."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
     run_stub = run_stub_factory()
     implementation = UbuntuDockerUserConfig(
         run=run_stub,
@@ -171,5 +178,5 @@ def test_install_does_not_add_existing_member(
 
     commands = [command for command, _ in run_stub.calls]
 
-    assert ["groupadd", "docker"] not in commands
-    assert ["usermod", "-aG", "docker", "testuser"] not in commands
+    assert ["sudo", "groupadd", "docker"] not in commands
+    assert ["sudo", "usermod", "-aG", "docker", "testuser"] not in commands
