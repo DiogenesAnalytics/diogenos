@@ -54,11 +54,20 @@ class Feature:
             )
 
             implementation = resolved_component.implementation
-            implementation.install(system)
+
+            try:
+                implementation.install(system)
+            except Exception as error:
+                raise RuntimeError(
+                    f"installation failed for component "
+                    f"{type(component).__name__}: {error}"
+                ) from error
 
             if not implementation.verify(system):
                 raise RuntimeError(
-                    f"installation failed for component {type(component).__name__}",
+                    f"verification failed for component "
+                    f"{type(component).__name__} using "
+                    f"{type(implementation).__name__}",
                 )
 
         if not self.is_satisfied(system):

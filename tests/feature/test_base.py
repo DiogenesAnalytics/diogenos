@@ -190,7 +190,7 @@ def test_apply_raises_when_verification_fails(
     resolver.implementation = implementation
     feature = ConcreteFeature((component,), resolver=resolver)
 
-    with pytest.raises(RuntimeError, match="installation failed"):
+    with pytest.raises(RuntimeError, match="verification failed"):
         feature.apply(system)
 
 
