@@ -11,3 +11,17 @@ def privileged_command(command: Sequence[str]) -> List[str]:
         return list(command)
 
     return ["sudo", *command]
+
+
+def prepare_command(
+    command: Sequence[str],
+    *,
+    privileged: bool = False,
+) -> List[str]:
+    """Prepare a command for execution."""
+    executable = list(command)
+
+    if privileged:
+        executable = privileged_command(executable)
+
+    return executable
