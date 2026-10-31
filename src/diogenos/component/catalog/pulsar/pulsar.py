@@ -12,6 +12,7 @@ from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import DebianComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.implementation.execution import prepare_command
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
@@ -73,12 +74,16 @@ class UbuntuPulsar(UbuntuComponentImplementation):
             urllib.request.urlretrieve(package_url, package_path)
 
             self._run(
-                [
-                    "apt-get",
-                    "install",
-                    "-y",
-                    str(package_path),
-                ],
+                prepare_command(
+                    [
+                        "apt-get",
+                        "install",
+                        "-y",
+                        "libasound2t64",
+                        str(package_path),
+                    ],
+                    privileged=True,
+                ),
                 check=True,
             )
 

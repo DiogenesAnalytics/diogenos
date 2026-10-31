@@ -133,6 +133,7 @@ def test_ubuntu_pulsar_install(
     asset_name: str,
 ) -> None:
     """Test installing the matching Pulsar Debian package."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     system = Mock(
         hardware=Mock(architecture=architecture),
     )
@@ -196,6 +197,91 @@ def test_ubuntu_pulsar_install(
             "apt-get",
             "install",
             "-y",
+            "libasound2t64",
+            str(tmp_path / "pulsar.deb"),
+        ],
+        check=True,
+    )
+
+
+@pytest.mark.parametrize(
+    ("architecture", "asset_name"),
+    [
+        ("amd64", "Linux.pulsar_1.132.1_amd64.deb"),
+        ("arm64", "ARM.Linux.pulsar_1.132.1_arm64.deb"),
+    ],
+)
+@pytest.mark.component
+def test_ubuntu_pulsar_install_with_sudo(
+    monkeypatch: MonkeyPatch,
+    run: Mock,
+    release: Dict[str, Any],
+    tmp_path: Path,
+    architecture: str,
+    asset_name: str,
+) -> None:
+    """Test that Pulsar installation uses sudo when not running as root."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+    system = Mock(
+        hardware=Mock(architecture=architecture),
+    )
+
+    response = Mock()
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    response.read.return_value = json.dumps(release).encode()
+
+    def load_release(response_object: Any) -> Dict[str, Any]:
+        """Decode the mocked GitHub release response."""
+        return cast(
+            Dict[str, Any],
+            json.loads(response_object.read().decode()),
+        )
+
+    urlopen = Mock(return_value=response)
+    urlretrieve = Mock()
+
+    monkeypatch.setattr(
+        "diogenos.component.catalog.pulsar.pulsar.urllib.request.urlopen",
+        urlopen,
+    )
+    monkeypatch.setattr(
+        "diogenos.component.catalog.pulsar.pulsar.json.load",
+        load_release,
+    )
+    monkeypatch.setattr(
+        "diogenos.component.catalog.pulsar.pulsar.tempfile.TemporaryDirectory",
+        lambda: Mock(
+            __enter__=Mock(return_value=str(tmp_path)),
+            __exit__=Mock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(
+        "diogenos.component.catalog.pulsar.pulsar.urllib.request.urlretrieve",
+        urlretrieve,
+    )
+
+    component = UbuntuPulsar(run=run)
+    component.install(system)
+
+    expected_url = next(
+        asset["browser_download_url"]
+        for asset in release["assets"]
+        if asset["name"] == asset_name
+    )
+
+    urlretrieve.assert_called_once_with(
+        expected_url,
+        tmp_path / "pulsar.deb",
+    )
+
+    run.assert_called_once_with(
+        [
+            "sudo",
+            "apt-get",
+            "install",
+            "-y",
+            "libasound2t64",
             str(tmp_path / "pulsar.deb"),
         ],
         check=True,
