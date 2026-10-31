@@ -10,6 +10,7 @@ from diogenos.component import ComponentImplementation
 from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.implementation.execution import prepare_command
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
@@ -26,9 +27,15 @@ class UbuntuGit(UbuntuComponentImplementation):
 
     def install(self, system: System) -> None:
         """Install Git on Ubuntu."""
-        self._run(["apt-get", "update"], check=True)
         self._run(
-            ["apt-get", "install", "-y", "git"],
+            prepare_command(["apt-get", "update"], privileged=True),
+            check=True,
+        )
+        self._run(
+            prepare_command(
+                ["apt-get", "install", "-y", "git"],
+                privileged=True,
+            ),
             check=True,
         )
 
@@ -49,9 +56,15 @@ class DebianGit(DebianComponentImplementation):
 
     def install(self, system: System) -> None:
         """Install Git on Debian."""
-        self._run(["apt-get", "update"], check=True)
         self._run(
-            ["apt-get", "install", "-y", "git"],
+            prepare_command(["apt-get", "update"], privileged=True),
+            check=True,
+        )
+        self._run(
+            prepare_command(
+                ["apt-get", "install", "-y", "git"],
+                privileged=True,
+            ),
             check=True,
         )
 
@@ -73,7 +86,10 @@ class FedoraGit(FedoraComponentImplementation):
     def install(self, system: System) -> None:
         """Install Git on Fedora."""
         self._run(
-            ["dnf", "install", "-y", "git"],
+            prepare_command(
+                ["dnf", "install", "-y", "git"],
+                privileged=True,
+            ),
             check=True,
         )
 
@@ -95,7 +111,10 @@ class ArchGit(ArchComponentImplementation):
     def install(self, system: System) -> None:
         """Install Git on Arch Linux."""
         self._run(
-            ["pacman", "-S", "--noconfirm", "git"],
+            prepare_command(
+                ["pacman", "-S", "--noconfirm", "git"],
+                privileged=True,
+            ),
             check=True,
         )
 

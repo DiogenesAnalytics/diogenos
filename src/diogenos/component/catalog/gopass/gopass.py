@@ -11,6 +11,7 @@ from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.dependency import Dependency
+from diogenos.component.implementation.execution import prepare_command
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
@@ -55,32 +56,41 @@ class UbuntuGoPass(UbuntuComponentImplementation):
     def install(self, system: System) -> None:
         """Install GoPass on Ubuntu."""
         self._run(
-            ["curl", "-L", "-q", KEYRING_URL, "-o", KEYRING_PATH],
+            prepare_command(
+                ["curl", "-L", "-q", KEYRING_URL, "-o", KEYRING_PATH],
+                privileged=True,
+            ),
             check=True,
         )
         self._run(
-            ["tee", SOURCE_PATH],
+            prepare_command(["tee", SOURCE_PATH], privileged=True),
             input=SOURCE_CONTENT,
             capture_output=True,
             check=True,
             text=True,
         )
         self._run(
-            ["tee", PREFERENCES_PATH],
+            prepare_command(["tee", PREFERENCES_PATH], privileged=True),
             input=PREFERENCES_CONTENT,
             capture_output=True,
             check=True,
             text=True,
         )
-        self._run(["apt-get", "update"], check=True)
         self._run(
-            [
-                "apt-get",
-                "install",
-                "-y",
-                "gopass",
-                "gopass-archive-keyring",
-            ],
+            prepare_command(["apt-get", "update"], privileged=True),
+            check=True,
+        )
+        self._run(
+            prepare_command(
+                [
+                    "apt-get",
+                    "install",
+                    "-y",
+                    "gopass",
+                    "gopass-archive-keyring",
+                ],
+                privileged=True,
+            ),
             check=True,
         )
 
@@ -121,7 +131,10 @@ class FedoraGoPass(FedoraComponentImplementation):
     def install(self, system: System) -> None:
         """Install GoPass on Fedora."""
         self._run(
-            ["dnf", "install", "-y", "gopass"],
+            prepare_command(
+                ["dnf", "install", "-y", "gopass"],
+                privileged=True,
+            ),
             check=True,
         )
 
@@ -143,7 +156,10 @@ class ArchGoPass(ArchComponentImplementation):
     def install(self, system: System) -> None:
         """Install GoPass on Arch Linux."""
         self._run(
-            ["pacman", "-S", "--noconfirm", "gopass"],
+            prepare_command(
+                ["pacman", "-S", "--noconfirm", "gopass"],
+                privileged=True,
+            ),
             check=True,
         )
 

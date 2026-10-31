@@ -3,6 +3,7 @@
 import subprocess
 
 import pytest
+from pytest import MonkeyPatch
 
 from diogenos.component import ComponentImplementation
 from diogenos.component.catalog.gnupg.gnupg import ArchGnuPG
@@ -78,8 +79,10 @@ def test_gnupg_package_returns_compatible_implementations(
 def test_ubuntu_gnupg_installs_gnupg(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Ubuntu GnuPG installation runs the expected commands."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = UbuntuGnuPG(run=run_stub)
 
     implementation.install(system)
@@ -91,6 +94,30 @@ def test_ubuntu_gnupg_installs_gnupg(
         ),
         (
             ["apt-get", "install", "-y", "gnupg"],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+def test_ubuntu_gnupg_installs_gnupg_with_sudo(
+    system: System,
+    run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Verify that Ubuntu GnuPG installation uses sudo when not running as root."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+    implementation = UbuntuGnuPG(run=run_stub)
+
+    implementation.install(system)
+
+    assert run_stub.calls == [
+        (
+            ["sudo", "apt-get", "update"],
+            {"check": True},
+        ),
+        (
+            ["sudo", "apt-get", "install", "-y", "gnupg"],
             {"check": True},
         ),
     ]
@@ -146,8 +173,10 @@ def test_ubuntu_gnupg_installation_propagates_command_failure(
 def test_debian_gnupg_installs_gnupg(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Debian GnuPG installation runs the expected commands."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = DebianGnuPG(run=run_stub)
 
     implementation.install(system)
@@ -214,8 +243,10 @@ def test_debian_gnupg_installation_propagates_command_failure(
 def test_fedora_gnupg_installs_gnupg(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Fedora GnuPG installation runs the expected command."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = FedoraGnuPG(run=run_stub)
 
     implementation.install(system)
@@ -278,8 +309,10 @@ def test_fedora_gnupg_installation_propagates_command_failure(
 def test_arch_gnupg_installs_gnupg(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Arch GnuPG installation runs the expected command."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = ArchGnuPG(run=run_stub)
 
     implementation.install(system)

@@ -11,6 +11,7 @@ from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.dependency import Dependency
+from diogenos.component.implementation.execution import prepare_command
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
@@ -27,9 +28,15 @@ class UbuntuGnuPG(UbuntuComponentImplementation):
 
     def install(self, system: System) -> None:
         """Install GnuPG on Ubuntu."""
-        self._run(["apt-get", "update"], check=True)
         self._run(
-            ["apt-get", "install", "-y", "gnupg"],
+            prepare_command(["apt-get", "update"], privileged=True),
+            check=True,
+        )
+        self._run(
+            prepare_command(
+                ["apt-get", "install", "-y", "gnupg"],
+                privileged=True,
+            ),
             check=True,
         )
 
@@ -50,9 +57,15 @@ class DebianGnuPG(DebianComponentImplementation):
 
     def install(self, system: System) -> None:
         """Install GnuPG on Debian."""
-        self._run(["apt-get", "update"], check=True)
         self._run(
-            ["apt-get", "install", "-y", "gnupg"],
+            prepare_command(["apt-get", "update"], privileged=True),
+            check=True,
+        )
+        self._run(
+            prepare_command(
+                ["apt-get", "install", "-y", "gnupg"],
+                privileged=True,
+            ),
             check=True,
         )
 
@@ -74,7 +87,10 @@ class FedoraGnuPG(FedoraComponentImplementation):
     def install(self, system: System) -> None:
         """Install GnuPG on Fedora."""
         self._run(
-            ["dnf", "install", "-y", "gnupg2"],
+            prepare_command(
+                ["dnf", "install", "-y", "gnupg2"],
+                privileged=True,
+            ),
             check=True,
         )
 
@@ -96,7 +112,10 @@ class ArchGnuPG(ArchComponentImplementation):
     def install(self, system: System) -> None:
         """Install GnuPG on Arch Linux."""
         self._run(
-            ["pacman", "-S", "--noconfirm", "gnupg"],
+            prepare_command(
+                ["pacman", "-S", "--noconfirm", "gnupg"],
+                privileged=True,
+            ),
             check=True,
         )
 

@@ -3,6 +3,7 @@
 import subprocess
 
 import pytest
+from pytest import MonkeyPatch
 
 from diogenos.component.catalog.tmux.tmux import ArchTmux
 from diogenos.component.catalog.tmux.tmux import DebianTmux
@@ -62,8 +63,10 @@ def test_tmux_package_returns_compatible_implementations(
 def test_ubuntu_tmux_installs_tmux(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Ubuntu Tmux installation runs the expected commands."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = UbuntuTmux(run=run_stub)
 
     implementation.install(system)
@@ -75,6 +78,30 @@ def test_ubuntu_tmux_installs_tmux(
         ),
         (
             ["apt-get", "install", "-y", "tmux"],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+def test_ubuntu_tmux_installs_tmux_with_sudo(
+    system: System,
+    run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Verify that Ubuntu Tmux installation uses sudo when not root."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+    implementation = UbuntuTmux(run=run_stub)
+
+    implementation.install(system)
+
+    assert run_stub.calls == [
+        (
+            ["sudo", "apt-get", "update"],
+            {"check": True},
+        ),
+        (
+            ["sudo", "apt-get", "install", "-y", "tmux"],
             {"check": True},
         ),
     ]
@@ -117,8 +144,10 @@ def test_ubuntu_tmux_verifies_failed_installation(
 def test_ubuntu_tmux_installation_propagates_command_failure(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that an APT failure interrupts Tmux installation."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     run_stub.returncode = 1
     implementation = UbuntuTmux(run=run_stub)
 
@@ -130,8 +159,10 @@ def test_ubuntu_tmux_installation_propagates_command_failure(
 def test_debian_tmux_installs_tmux(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Debian Tmux installation runs the expected commands."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = DebianTmux(run=run_stub)
 
     implementation.install(system)
@@ -185,8 +216,10 @@ def test_debian_tmux_verifies_failed_installation(
 def test_debian_tmux_installation_propagates_command_failure(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that an APT failure interrupts Tmux installation."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     run_stub.returncode = 1
     implementation = DebianTmux(run=run_stub)
 
@@ -198,8 +231,10 @@ def test_debian_tmux_installation_propagates_command_failure(
 def test_fedora_tmux_installs_tmux(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Fedora Tmux installation runs the expected command."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = FedoraTmux(run=run_stub)
 
     implementation.install(system)
@@ -207,6 +242,26 @@ def test_fedora_tmux_installs_tmux(
     assert run_stub.calls == [
         (
             ["dnf", "install", "-y", "tmux"],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+def test_fedora_tmux_installs_tmux_with_sudo(
+    system: System,
+    run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Verify that Fedora Tmux installation uses sudo when not root."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+    implementation = FedoraTmux(run=run_stub)
+
+    implementation.install(system)
+
+    assert run_stub.calls == [
+        (
+            ["sudo", "dnf", "install", "-y", "tmux"],
             {"check": True},
         ),
     ]
@@ -249,8 +304,10 @@ def test_fedora_tmux_verifies_failed_installation(
 def test_fedora_tmux_installation_propagates_command_failure(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that a DNF failure interrupts Tmux installation."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     run_stub.returncode = 1
     implementation = FedoraTmux(run=run_stub)
 
@@ -262,8 +319,10 @@ def test_fedora_tmux_installation_propagates_command_failure(
 def test_arch_tmux_installs_tmux(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Arch Tmux installation runs the expected command."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = ArchTmux(run=run_stub)
 
     implementation.install(system)
@@ -271,6 +330,26 @@ def test_arch_tmux_installs_tmux(
     assert run_stub.calls == [
         (
             ["pacman", "-S", "--noconfirm", "tmux"],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+def test_arch_tmux_installs_tmux_with_sudo(
+    system: System,
+    run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Verify that Arch Tmux installation uses sudo when not root."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+    implementation = ArchTmux(run=run_stub)
+
+    implementation.install(system)
+
+    assert run_stub.calls == [
+        (
+            ["sudo", "pacman", "-S", "--noconfirm", "tmux"],
             {"check": True},
         ),
     ]
@@ -313,8 +392,10 @@ def test_arch_tmux_verifies_failed_installation(
 def test_arch_tmux_installation_propagates_command_failure(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that a Pacman failure interrupts Tmux installation."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     run_stub.returncode = 1
     implementation = ArchTmux(run=run_stub)
 

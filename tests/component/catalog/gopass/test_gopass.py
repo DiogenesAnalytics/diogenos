@@ -3,6 +3,7 @@
 import subprocess
 
 import pytest
+from pytest import MonkeyPatch
 
 from diogenos.component.catalog.gopass.gopass import KEYRING_PATH
 from diogenos.component.catalog.gopass.gopass import KEYRING_URL
@@ -75,8 +76,10 @@ def test_gopass_package_implementations(
 def test_ubuntu_gopass_install(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Test installing GoPass on Ubuntu."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = UbuntuGoPass(run=run_stub)
 
     implementation.install(system)
@@ -107,6 +110,56 @@ def test_ubuntu_gopass_install(
         (["apt-get", "update"], {"check": True}),
         (
             [
+                "apt-get",
+                "install",
+                "-y",
+                "gopass",
+                "gopass-archive-keyring",
+            ],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+def test_ubuntu_gopass_install_with_sudo(
+    system: System,
+    run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Test that GoPass installation uses sudo when not running as root."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+    implementation = UbuntuGoPass(run=run_stub)
+
+    implementation.install(system)
+
+    assert run_stub.calls == [
+        (
+            ["sudo", "curl", "-L", "-q", KEYRING_URL, "-o", KEYRING_PATH],
+            {"check": True},
+        ),
+        (
+            ["sudo", "tee", SOURCE_PATH],
+            {
+                "input": SOURCE_CONTENT,
+                "capture_output": True,
+                "check": True,
+                "text": True,
+            },
+        ),
+        (
+            ["sudo", "tee", PREFERENCES_PATH],
+            {
+                "input": PREFERENCES_CONTENT,
+                "capture_output": True,
+                "check": True,
+                "text": True,
+            },
+        ),
+        (["sudo", "apt-get", "update"], {"check": True}),
+        (
+            [
+                "sudo",
                 "apt-get",
                 "install",
                 "-y",
@@ -168,8 +221,10 @@ def test_ubuntu_gopass_install_failure(
 def test_debian_gopass_install(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Test installing GoPass on Debian."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = DebianGoPass(run=run_stub)
 
     implementation.install(system)
@@ -249,8 +304,10 @@ def test_debian_gopass_install_failure(
 def test_fedora_gopass_install(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Test installing GoPass on Fedora."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = FedoraGoPass(run=run_stub)
 
     implementation.install(system)
@@ -301,8 +358,10 @@ def test_fedora_gopass_install_failure(
 def test_arch_gopass_install(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Test installing GoPass on Arch Linux."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = ArchGoPass(run=run_stub)
 
     implementation.install(system)

@@ -10,6 +10,7 @@ from diogenos.component import ComponentImplementation
 from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.implementation.execution import prepare_command
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
@@ -26,9 +27,15 @@ class UbuntuCurl(UbuntuComponentImplementation):
 
     def install(self, system: System) -> None:
         """Install Curl on Ubuntu."""
-        self._run(["apt-get", "update"], check=True)
         self._run(
-            ["apt-get", "install", "-y", "curl"],
+            prepare_command(["apt-get", "update"], privileged=True),
+            check=True,
+        )
+        self._run(
+            prepare_command(
+                ["apt-get", "install", "-y", "curl"],
+                privileged=True,
+            ),
             check=True,
         )
 
@@ -69,7 +76,10 @@ class FedoraCurl(FedoraComponentImplementation):
     def install(self, system: System) -> None:
         """Install Curl on Fedora."""
         self._run(
-            ["dnf", "install", "-y", "curl"],
+            prepare_command(
+                ["dnf", "install", "-y", "curl"],
+                privileged=True,
+            ),
             check=True,
         )
 
@@ -79,7 +89,7 @@ class FedoraCurl(FedoraComponentImplementation):
 
 
 class ArchCurl(ArchComponentImplementation):
-    """Define the Arch Linux Curl implementation."""
+    """Define the Arch Linux implementation of Curl."""
 
     def __init__(
         self,
@@ -91,7 +101,10 @@ class ArchCurl(ArchComponentImplementation):
     def install(self, system: System) -> None:
         """Install Curl on Arch Linux."""
         self._run(
-            ["pacman", "-S", "--noconfirm", "curl"],
+            prepare_command(
+                ["pacman", "-S", "--noconfirm", "curl"],
+                privileged=True,
+            ),
             check=True,
         )
 

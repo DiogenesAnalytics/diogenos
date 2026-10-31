@@ -10,6 +10,7 @@ from diogenos.component import ComponentImplementation
 from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.implementation.execution import prepare_command
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
@@ -26,8 +27,17 @@ class UbuntuTmux(UbuntuComponentImplementation):
 
     def install(self, system: System) -> None:
         """Install Tmux on Ubuntu."""
-        self._run(["apt-get", "update"], check=True)
-        self._run(["apt-get", "install", "-y", "tmux"], check=True)
+        self._run(
+            prepare_command(["apt-get", "update"], privileged=True),
+            check=True,
+        )
+        self._run(
+            prepare_command(
+                ["apt-get", "install", "-y", "tmux"],
+                privileged=True,
+            ),
+            check=True,
+        )
 
     def verify(self, system: System) -> bool:
         """Verify that Tmux is available."""
@@ -46,8 +56,17 @@ class DebianTmux(DebianComponentImplementation):
 
     def install(self, system: System) -> None:
         """Install Tmux on Debian."""
-        self._run(["apt-get", "update"], check=True)
-        self._run(["apt-get", "install", "-y", "tmux"], check=True)
+        self._run(
+            prepare_command(["apt-get", "update"], privileged=True),
+            check=True,
+        )
+        self._run(
+            prepare_command(
+                ["apt-get", "install", "-y", "tmux"],
+                privileged=True,
+            ),
+            check=True,
+        )
 
     def verify(self, system: System) -> bool:
         """Verify that Tmux is available."""
@@ -66,7 +85,13 @@ class FedoraTmux(FedoraComponentImplementation):
 
     def install(self, system: System) -> None:
         """Install Tmux on Fedora."""
-        self._run(["dnf", "install", "-y", "tmux"], check=True)
+        self._run(
+            prepare_command(
+                ["dnf", "install", "-y", "tmux"],
+                privileged=True,
+            ),
+            check=True,
+        )
 
     def verify(self, system: System) -> bool:
         """Verify that Tmux is available."""
@@ -80,13 +105,16 @@ class ArchTmux(ArchComponentImplementation):
         self,
         run: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
     ) -> None:
-        """Initialize the Arch Linux Tmux implementation."""
+        """Initialize the Arch Tmux implementation."""
         self._run = run
 
     def install(self, system: System) -> None:
         """Install Tmux on Arch Linux."""
         self._run(
-            ["pacman", "-S", "--noconfirm", "tmux"],
+            prepare_command(
+                ["pacman", "-S", "--noconfirm", "tmux"],
+                privileged=True,
+            ),
             check=True,
         )
 

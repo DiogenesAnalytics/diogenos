@@ -3,6 +3,7 @@
 import subprocess
 
 import pytest
+from pytest import MonkeyPatch
 
 from diogenos.component.catalog.curl.curl import ArchCurl
 from diogenos.component.catalog.curl.curl import CurlPackage
@@ -68,8 +69,10 @@ def test_curl_package_returns_compatible_implementations(
 def test_ubuntu_curl_installs_curl(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Ubuntu Curl installation runs the expected commands."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = UbuntuCurl(run=run_stub)
 
     implementation.install(system)
@@ -81,6 +84,30 @@ def test_ubuntu_curl_installs_curl(
         ),
         (
             ["apt-get", "install", "-y", "curl"],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+def test_ubuntu_curl_installs_curl_with_sudo(
+    system: System,
+    run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Verify that Ubuntu Curl installation uses sudo when not running as root."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+    implementation = UbuntuCurl(run=run_stub)
+
+    implementation.install(system)
+
+    assert run_stub.calls == [
+        (
+            ["sudo", "apt-get", "update"],
+            {"check": True},
+        ),
+        (
+            ["sudo", "apt-get", "install", "-y", "curl"],
             {"check": True},
         ),
     ]
@@ -136,8 +163,10 @@ def test_ubuntu_curl_installation_propagates_command_failure(
 def test_debian_curl_installs_curl(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Debian Curl installation delegates to Ubuntu Curl."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = DebianCurl(run=run_stub)
 
     implementation.install(system)
@@ -204,8 +233,10 @@ def test_debian_curl_installation_propagates_command_failure(
 def test_fedora_curl_installs_curl(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Fedora Curl installation runs the expected command."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = FedoraCurl(run=run_stub)
 
     implementation.install(system)
@@ -268,8 +299,10 @@ def test_fedora_curl_installation_propagates_command_failure(
 def test_arch_curl_installs_curl(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Arch Curl installation runs the expected command."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = ArchCurl(run=run_stub)
 
     implementation.install(system)

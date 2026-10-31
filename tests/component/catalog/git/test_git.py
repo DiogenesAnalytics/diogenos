@@ -3,6 +3,7 @@
 import subprocess
 
 import pytest
+from pytest import MonkeyPatch
 
 from diogenos.component.catalog.git.git import ArchGit
 from diogenos.component.catalog.git.git import DebianGit
@@ -62,8 +63,10 @@ def test_git_component_returns_implementations(
 def test_ubuntu_git_installs_git(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Ubuntu Git installation runs the expected commands."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = UbuntuGit(run=run_stub)
 
     implementation.install(system)
@@ -75,6 +78,30 @@ def test_ubuntu_git_installs_git(
         ),
         (
             ["apt-get", "install", "-y", "git"],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+def test_ubuntu_git_installs_git_with_sudo(
+    system: System,
+    run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Verify that Ubuntu Git installation uses sudo when not running as root."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+    implementation = UbuntuGit(run=run_stub)
+
+    implementation.install(system)
+
+    assert run_stub.calls == [
+        (
+            ["sudo", "apt-get", "update"],
+            {"check": True},
+        ),
+        (
+            ["sudo", "apt-get", "install", "-y", "git"],
             {"check": True},
         ),
     ]
@@ -130,8 +157,10 @@ def test_ubuntu_git_installation_propagates_command_failure(
 def test_fedora_git_installs_git(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Fedora Git installation runs the expected command."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = FedoraGit(run=run_stub)
 
     implementation.install(system)
@@ -194,8 +223,10 @@ def test_fedora_git_installation_propagates_command_failure(
 def test_debian_git_installs_git(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Debian Git installation runs the expected commands."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = DebianGit(run=run_stub)
 
     implementation.install(system)
@@ -262,8 +293,10 @@ def test_debian_git_installation_propagates_command_failure(
 def test_arch_git_installs_git(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that Arch Git installation runs the expected command."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     implementation = ArchGit(run=run_stub)
 
     implementation.install(system)
