@@ -3,7 +3,7 @@
         deptry isort black flake8 mypy nox shell clear-nb clean install-act \
         check-act run-act-tests test-py-version vagrant-install vagrant-check \
         vagrant-provider-install vagrant-provider-check e2e-box-build \
-        e2e-box-clean e2e-tests
+        e2e-box-clean e2e-tests e2e-shell e2e-rm e2e-check
 
 # Usage:
 # make                           # just alias to containers command
@@ -40,6 +40,9 @@
 # make e2e-box-build             # build and register the E2E VM box
 # make e2e-box-clean             # remove the generated E2E box package file
 # make e2e-tests                 # run E2E tests inside a Vagrant VM
+# make e2e-shell                 # open an interactive shell in the E2E VM
+# make e2e-rm                    # destroy the E2E VM
+# make e2e-check                 # check the E2E VM status
 
 ################################################################################
 # GLOBALS                                                                      #
@@ -124,6 +127,8 @@ E2E_BOX_VAGRANTFILE := Vagrantfile.box
 E2E_BOX_DOTFILE_PATH := .vagrant-box
 E2E_VAGRANTFILE := Vagrantfile.e2e
 E2E_DEBUG ?= false
+E2E_POST_SHELL ?= false
+E2E_PYTEST_ARGS ?=
 
 # Run a Vagrant command using the E2E box build configuration
 define E2E_BOX_VAGRANT
@@ -200,8 +205,21 @@ define E2E_RUN_TESTS
 	echo "==> Synchronizing project files..."; \
 	$(call E2E_VAGRANT,rsync); \
 	echo "==> Running E2E tests..."; \
+	set +e; \
 	$(call E2E_VAGRANT,ssh -c \
-	  'cd /diogenos && DIOGENOS_E2E=1 /home/vagrant/.local/bin/poetry run pytest -m e2e')
+	  'cd /diogenos && DIOGENOS_E2E=1 /home/vagrant/.local/bin/poetry run pytest -m e2e $(E2E_PYTEST_ARGS)'); \
+	test_status=$$?; \
+	set -e; \
+	$(if $(filter true,$(E2E_POST_SHELL)), \
+	  echo "==> Opening interactive E2E shell..."; \
+	  $(call E2E_VAGRANT,ssh); \
+	) \
+	exit $$test_status
+endef
+
+# Open an interactive shell in the E2E VM
+define E2E_SHELL
+	$(call E2E_VAGRANT,ssh)
 endef
 
 # Define the docker build command with optional --no-cache
@@ -434,3 +452,18 @@ e2e-box-clean:
 # Run E2E tests inside a disposable Vagrant VM
 e2e-tests:
 	@$(E2E_RUN_TESTS)
+
+# Open an interactive shell in the E2E VM
+e2e-shell:
+	@$(call E2E_VAGRANT,up --provider="$(E2E_VAGRANT_PROVIDER)")
+	@$(call E2E_VAGRANT,rsync)
+	@$(call E2E_VAGRANT,ssh)
+
+# Remove the E2E VM
+e2e-rm:
+	@echo "==> Destroying E2E VM..."
+	@$(call E2E_VAGRANT,destroy -f)
+
+# Check the E2E VM status
+e2e-check:
+	@$(call E2E_VAGRANT,status)
