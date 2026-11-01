@@ -49,9 +49,14 @@ class ComponentStub(Component):
 class RunStub:
     """Stub subprocess.run and record its calls."""
 
-    def __init__(self, returncode: int = 0) -> None:
-        """Initialize the stub with a command return code."""
+    def __init__(
+        self,
+        returncode: int = 0,
+        stdout: str = "",
+    ) -> None:
+        """Initialize the stub with a command return code and output."""
         self.returncode = returncode
+        self.stdout = stdout
         self.calls: List[Tuple[List[str], Dict[str, Any]]] = []
 
     def __call__(
@@ -65,7 +70,7 @@ class RunStub:
         result = subprocess.CompletedProcess(
             args=command,
             returncode=self.returncode,
-            stdout="",
+            stdout=self.stdout,
             stderr="",
         )
 
