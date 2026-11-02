@@ -1,0 +1,1 @@
+"""Provide Firefox components."""
