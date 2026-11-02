@@ -21,7 +21,14 @@ def test_feature_list() -> None:
 
 
 @pytest.mark.e2e
-@pytest.mark.parametrize("feature_id", FeatureRegistry().list())
+@pytest.mark.lifecycle
+@pytest.mark.parametrize(
+    "feature_id",
+    [
+        pytest.param(feature_id, id=feature_id)
+        for feature_id in FeatureRegistry().list()
+    ],
+)
 def test_feature_lifecycle(feature_id: str) -> None:
     """Verify the feature installation lifecycle."""
     install_result = subprocess.run(
