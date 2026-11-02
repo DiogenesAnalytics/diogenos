@@ -184,3 +184,14 @@ def test_ubuntu_emacs_keymap_install_failure(
 
     with pytest.raises(subprocess.CalledProcessError):
         implementation.install(system)
+
+
+@pytest.mark.component
+def test_emacs_keymap_declares_keyd_dependency() -> None:
+    """Verify that the Emacs keymap depends on Keyd."""
+    component = EmacsKeymap()
+
+    dependencies = component.dependencies()
+
+    assert len(dependencies) == 1
+    assert dependencies[0].name == "keyd"

@@ -7,6 +7,7 @@ from typing import Tuple
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.dependency import Dependency
 from diogenos.component.implementation.execution import prepare_command
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
@@ -80,6 +81,10 @@ class EmacsKeymap(Component):
     ) -> None:
         """Initialize the Emacs keymap component."""
         self._run = run
+
+    def dependencies(self) -> Tuple[Dependency, ...]:
+        """Return the component dependencies."""
+        return (Dependency("keyd"),)
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether the Emacs keymap is installed and valid."""
