@@ -125,7 +125,7 @@ class ArchFirefox(ArchComponentImplementation):
         return validate_command(self._run, ["firefox", "--version"])
 
 
-class Firefox(Component):
+class FirefoxPackage(Component):
     """Represent the Firefox browser."""
 
     registry_id = "firefox"

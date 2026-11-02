@@ -8,7 +8,7 @@ from pytest import MonkeyPatch
 from diogenos.component.catalog.browser.firefox.firefox import ArchFirefox
 from diogenos.component.catalog.browser.firefox.firefox import DebianFirefox
 from diogenos.component.catalog.browser.firefox.firefox import FedoraFirefox
-from diogenos.component.catalog.browser.firefox.firefox import Firefox
+from diogenos.component.catalog.browser.firefox.firefox import FirefoxPackage
 from diogenos.component.catalog.browser.firefox.firefox import UbuntuFirefox
 from diogenos.system.base import System
 from tests.component.support import RunStub
@@ -20,7 +20,7 @@ def test_firefox_component_is_satisfied_when_firefox_is_available(
     run_stub: RunStub,
 ) -> None:
     """Verify that Firefox is satisfied when firefox --version succeeds."""
-    component = Firefox(run=run_stub)
+    component = FirefoxPackage(run=run_stub)
 
     assert component.is_satisfied(system) is True
     assert run_stub.calls == [
@@ -54,7 +54,7 @@ def test_firefox_component_is_satisfied_when_firefox_esr_is_available(
             stderr="",
         )
 
-    component = Firefox(run=run)
+    component = FirefoxPackage(run=run)
 
     assert component.is_satisfied(system) is True
     assert calls == [
@@ -84,7 +84,7 @@ def test_firefox_component_is_not_satisfied_when_firefox_is_unavailable(
 ) -> None:
     """Verify that Firefox is not satisfied when neither executable is available."""
     run_stub.returncode = 127
-    component = Firefox(run=run_stub)
+    component = FirefoxPackage(run=run_stub)
 
     assert component.is_satisfied(system) is False
     assert len(run_stub.calls) == 2
@@ -95,7 +95,7 @@ def test_firefox_component_returns_implementations(
     system: System,
 ) -> None:
     """Verify that the Firefox component exposes compatible implementations."""
-    component = Firefox()
+    component = FirefoxPackage()
 
     implementations = component.implementations()
 
