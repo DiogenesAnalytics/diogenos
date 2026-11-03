@@ -3,7 +3,8 @@
         deptry isort black flake8 mypy nox shell clear-nb clean install-act \
         check-act run-act-tests test-py-version vagrant-install vagrant-check \
         vagrant-provider-install vagrant-provider-check e2e-box-build \
-        e2e-box-clean e2e-tests e2e-shell e2e-rm e2e-check
+        e2e-box-destroy e2e-box-clean e2e-tests e2e-shell e2e-box-gui e2e-rm \
+        e2e-check
 
 # Usage:
 # make                           # just alias to containers command
@@ -38,9 +39,11 @@
 # make vagrant-provider-install  # install selected Vagrant provider
 # make vagrant-provider-check    # check selected Vagrant provider
 # make e2e-box-build             # build and register the E2E VM box
+# make e2e-box-destroy           # destroy the E2E box build VM
 # make e2e-box-clean             # remove the generated E2E box package file
 # make e2e-tests                 # run E2E tests inside a Vagrant VM
 # make e2e-shell                 # open an interactive shell in the E2E VM
+# make e2e-box-gui               # start the E2E VM and open its GUI
 # make e2e-rm                    # destroy the E2E VM
 # make e2e-check                 # check the E2E VM status
 
@@ -444,6 +447,11 @@ vagrant-provider-check:
 e2e-box-build:
 	@$(E2E_BUILD_BOX)
 
+# Destroy the E2E box build VM
+e2e-box-destroy:
+	@echo "==> Destroying E2E box build VM..."
+	@$(call E2E_BOX_VAGRANT,destroy -f)
+
 # Remove the generated E2E box package file
 e2e-box-clean:
 	@echo "==> Removing generated E2E box artifact..."
@@ -458,6 +466,11 @@ e2e-shell:
 	@$(call E2E_VAGRANT,up --provider="$(E2E_VAGRANT_PROVIDER)")
 	@$(call E2E_VAGRANT,rsync)
 	@$(call E2E_VAGRANT,ssh)
+
+# Start the GUI build VM and open its graphical console
+e2e-box-gui:
+	@$(call E2E_VAGRANT,up --provider="$(E2E_VAGRANT_PROVIDER)")
+	@virt-viewer diogenos_default
 
 # Remove the E2E VM
 e2e-rm:
