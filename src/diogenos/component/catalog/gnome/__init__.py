@@ -1,0 +1,1 @@
+"""Provide GNOME components."""
