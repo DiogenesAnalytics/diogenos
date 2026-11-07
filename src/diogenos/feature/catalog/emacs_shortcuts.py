@@ -1,22 +1,16 @@
-"""Define the Emacs shortcuts feature."""
+"""Define the GTK Emacs shortcuts feature."""
 
-from diogenos.component.catalog.keyboard.emacs_keymap import EmacsKeymap
 from diogenos.component.catalog.keyboard.gtk import GtkEmacsKeymap
-from diogenos.component.catalog.keyboard.keyd import Keyd
 from diogenos.feature.base import Feature
 
 
-class EmacsShortcuts(Feature):
-    """Represent the Emacs shortcuts feature."""
+class GtkEmacsShortcuts(Feature):
+    """Represent the GTK Emacs shortcuts feature."""
 
-    registry_id = "emacs_shortcuts"
+    registry_id = "gtk_emacs_shortcuts"
 
     def __init__(self) -> None:
-        """Initialize the Emacs shortcuts feature."""
+        """Initialize the GTK Emacs shortcuts feature."""
         super().__init__(
-            components=(
-                Keyd(),
-                EmacsKeymap(),
-                GtkEmacsKeymap(),
-            ),
+            components=(GtkEmacsKeymap(),),
         )
