@@ -12,6 +12,7 @@ from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import DebianComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.implementation.execution import download_file
 from diogenos.component.implementation.execution import prepare_command
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
@@ -71,7 +72,7 @@ class UbuntuPulsar(UbuntuComponentImplementation):
         with tempfile.TemporaryDirectory() as directory:
             package_path = Path(directory) / "pulsar.deb"
 
-            urllib.request.urlretrieve(package_url, package_path)
+            download_file(package_url, package_path)
 
             self._run(
                 prepare_command(

@@ -5,7 +5,6 @@ import subprocess
 from pathlib import Path
 from typing import Any
 from typing import Dict
-from typing import cast
 from unittest.mock import Mock
 
 import pytest
@@ -143,15 +142,8 @@ def test_ubuntu_pulsar_install(
     response.__exit__ = Mock(return_value=False)
     response.read.return_value = json.dumps(release).encode()
 
-    def load_release(response_object: Any) -> Dict[str, Any]:
-        """Decode the mocked GitHub release response."""
-        return cast(
-            Dict[str, Any],
-            json.loads(response_object.read().decode()),
-        )
-
     urlopen = Mock(return_value=response)
-    urlretrieve = Mock()
+    download = Mock()
 
     monkeypatch.setattr(
         "diogenos.component.catalog.pulsar.pulsar.urllib.request.urlopen",
@@ -159,7 +151,7 @@ def test_ubuntu_pulsar_install(
     )
     monkeypatch.setattr(
         "diogenos.component.catalog.pulsar.pulsar.json.load",
-        load_release,
+        lambda response_object: json.loads(response_object.read().decode()),
     )
     monkeypatch.setattr(
         "diogenos.component.catalog.pulsar.pulsar.tempfile.TemporaryDirectory",
@@ -169,8 +161,8 @@ def test_ubuntu_pulsar_install(
         ),
     )
     monkeypatch.setattr(
-        "diogenos.component.catalog.pulsar.pulsar.urllib.request.urlretrieve",
-        urlretrieve,
+        "diogenos.component.catalog.pulsar.pulsar.download_file",
+        download,
     )
 
     component = UbuntuPulsar(run=run)
@@ -187,7 +179,7 @@ def test_ubuntu_pulsar_install(
         if asset["name"] == asset_name
     )
 
-    urlretrieve.assert_called_once_with(
+    download.assert_called_once_with(
         expected_url,
         tmp_path / "pulsar.deb",
     )
@@ -231,15 +223,8 @@ def test_ubuntu_pulsar_install_with_sudo(
     response.__exit__ = Mock(return_value=False)
     response.read.return_value = json.dumps(release).encode()
 
-    def load_release(response_object: Any) -> Dict[str, Any]:
-        """Decode the mocked GitHub release response."""
-        return cast(
-            Dict[str, Any],
-            json.loads(response_object.read().decode()),
-        )
-
     urlopen = Mock(return_value=response)
-    urlretrieve = Mock()
+    download = Mock()
 
     monkeypatch.setattr(
         "diogenos.component.catalog.pulsar.pulsar.urllib.request.urlopen",
@@ -247,7 +232,7 @@ def test_ubuntu_pulsar_install_with_sudo(
     )
     monkeypatch.setattr(
         "diogenos.component.catalog.pulsar.pulsar.json.load",
-        load_release,
+        lambda response_object: json.loads(response_object.read().decode()),
     )
     monkeypatch.setattr(
         "diogenos.component.catalog.pulsar.pulsar.tempfile.TemporaryDirectory",
@@ -257,8 +242,8 @@ def test_ubuntu_pulsar_install_with_sudo(
         ),
     )
     monkeypatch.setattr(
-        "diogenos.component.catalog.pulsar.pulsar.urllib.request.urlretrieve",
-        urlretrieve,
+        "diogenos.component.catalog.pulsar.pulsar.download_file",
+        download,
     )
 
     component = UbuntuPulsar(run=run)
@@ -270,7 +255,7 @@ def test_ubuntu_pulsar_install_with_sudo(
         if asset["name"] == asset_name
     )
 
-    urlretrieve.assert_called_once_with(
+    download.assert_called_once_with(
         expected_url,
         tmp_path / "pulsar.deb",
     )
@@ -286,6 +271,44 @@ def test_ubuntu_pulsar_install_with_sudo(
         ],
         check=True,
     )
+
+
+@pytest.mark.component
+def test_ubuntu_pulsar_install_download_failure(
+    monkeypatch: MonkeyPatch,
+    run: Mock,
+    release: Dict[str, Any],
+    system: System,
+) -> None:
+    """Test that installation stops when downloading the package fails."""
+    response = Mock()
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    response.read.return_value = json.dumps(release).encode()
+
+    monkeypatch.setattr(
+        "diogenos.component.catalog.pulsar.pulsar.urllib.request.urlopen",
+        Mock(return_value=response),
+    )
+    monkeypatch.setattr(
+        "diogenos.component.catalog.pulsar.pulsar.json.load",
+        lambda _: release,
+    )
+
+    download = Mock(side_effect=RuntimeError("download failed"))
+
+    monkeypatch.setattr(
+        "diogenos.component.catalog.pulsar.pulsar.download_file",
+        download,
+    )
+
+    component = UbuntuPulsar(run=run)
+
+    with pytest.raises(RuntimeError, match="download failed"):
+        component.install(system)
+
+    download.assert_called_once()
+    run.assert_not_called()
 
 
 @pytest.mark.component
