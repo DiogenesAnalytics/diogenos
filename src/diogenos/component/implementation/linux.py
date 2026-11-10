@@ -1,15 +1,33 @@
 """Define Linux component implementation strategies."""
 
 from .base import ComponentImplementation
+from .method.apt import APTMethod
+from .method.apt import APTOptions
+from .method.snap import SnapMethod
+from .method.snap import SnapOptions
 from .method.types import MethodType
 
 
 class APTComponentImplementation(ComponentImplementation):
     """Define an implementation using APT."""
 
+    METHODS = {
+        MethodType.APT: (
+            APTMethod,
+            APTOptions(),
+        ),
+    }
+
 
 class SnapComponentImplementation(ComponentImplementation):
     """Define an implementation using Snap."""
+
+    METHODS = {
+        MethodType.SNAP: (
+            SnapMethod,
+            SnapOptions(),
+        ),
+    }
 
 
 class DebianComponentImplementation(APTComponentImplementation):
