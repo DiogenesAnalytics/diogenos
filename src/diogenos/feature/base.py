@@ -27,24 +27,20 @@ class Feature:
         """Return the components that comprise the feature."""
         return self._components
 
-    def is_satisfied(self, system: System) -> bool:
-        """Determine whether all components and their dependencies are satisfied."""
-        dependency_resolved_components = self._resolver.resolve_dependencies(
-            self._components,
-        )
+    @property
+    def resolved_components(self) -> Tuple[Component, ...]:
+        """Return the components that comprise the feature, including dependencies."""
+        return self._resolver.resolve_dependencies(self._components)
 
+    def is_satisfied(self, system: System) -> bool:
+        """Determine if all components and their dependencies are satisfied."""
         return all(
-            component.is_satisfied(system)
-            for component in dependency_resolved_components
+            component.is_satisfied(system) for component in self.resolved_components
         )
 
     def apply(self, system: System) -> None:
         """Apply the feature to bring the system into its desired state."""
-        dependency_resolved_components = self._resolver.resolve_dependencies(
-            self._components,
-        )
-
-        for component in dependency_resolved_components:
+        for component in self.resolved_components:
             if component.is_satisfied(system):
                 continue
 

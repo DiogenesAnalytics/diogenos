@@ -138,5 +138,35 @@ def install_feature(
         raise click.exceptions.Exit(1)
 
 
+@feature.command(name="components")
+@click.argument("registry_ids", nargs=-1, required=True)
+def list_feature_components(registry_ids: Tuple[str, ...]) -> None:
+    """List components and their dependencies for features."""
+    registry = FeatureRegistry()
+    all_found = True
+
+    for registry_id in registry_ids:
+        try:
+            feature_class = registry.get(registry_id)
+        except KeyError:
+            click.echo(
+                f"Error: {registry_id} is not a registered feature.",
+                err=True,
+            )
+            all_found = False
+            continue
+
+        feature_factory = cast(Callable[[], Feature], feature_class)
+        selected_feature = feature_factory()
+
+        click.echo(f"Feature {registry_id!r}:")
+
+        for component in selected_feature.resolved_components:
+            click.echo(f"  {component.registry_id}")
+
+    if not all_found:
+        raise click.exceptions.Exit(1)
+
+
 if __name__ == "__main__":
     main()

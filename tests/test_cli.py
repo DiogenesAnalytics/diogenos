@@ -10,6 +10,26 @@ from diogenos.cli import main
 from diogenos.system.base import System
 
 
+@pytest.fixture
+def registry(monkeypatch: MonkeyPatch) -> Mock:
+    """Provide a mocked feature registry."""
+    registry = Mock()
+    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
+
+    return registry
+
+
+@pytest.fixture
+def detector(monkeypatch: MonkeyPatch, system: System) -> Mock:
+    """Provide a mocked system detector."""
+    detector = Mock()
+    detector.detect.return_value = system
+
+    monkeypatch.setattr("diogenos.cli.SystemDetector", lambda: detector)
+
+    return detector
+
+
 @pytest.mark.cli
 def test_main_displays_help() -> None:
     """Verify that the CLI displays help."""
@@ -51,12 +71,9 @@ def test_feature_displays_help_for_no_arguments() -> None:
 
 
 @pytest.mark.cli
-def test_feature_list(monkeypatch: MonkeyPatch) -> None:
+def test_feature_list(registry: Mock) -> None:
     """Verify that the feature list command prints registered identifiers."""
-    registry = Mock()
     registry.list.return_value = ("pulsar", "tmux")
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
 
     result = CliRunner().invoke(main, ["feature", "list"])
 
@@ -67,21 +84,14 @@ def test_feature_list(monkeypatch: MonkeyPatch) -> None:
 
 @pytest.mark.cli
 def test_feature_check_satisfied(
-    monkeypatch: MonkeyPatch,
+    registry: Mock,
+    detector: Mock,
+    system: System,
 ) -> None:
     """Verify that checking a satisfied feature succeeds."""
     selected_feature = Mock()
     selected_feature.is_satisfied.return_value = True
-
-    registry = Mock()
     registry.get.return_value = lambda: selected_feature
-
-    system = Mock(spec=System)
-    detector = Mock()
-    detector.detect.return_value = system
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
-    monkeypatch.setattr("diogenos.cli.SystemDetector", lambda: detector)
 
     result = CliRunner().invoke(main, ["feature", "check", "pulsar"])
 
@@ -94,21 +104,14 @@ def test_feature_check_satisfied(
 
 @pytest.mark.cli
 def test_feature_check_unsatisfied(
-    monkeypatch: MonkeyPatch,
+    registry: Mock,
+    detector: Mock,
+    system: System,
 ) -> None:
     """Verify that checking an unsatisfied feature fails."""
     selected_feature = Mock()
     selected_feature.is_satisfied.return_value = False
-
-    registry = Mock()
     registry.get.return_value = lambda: selected_feature
-
-    system = Mock(spec=System)
-    detector = Mock()
-    detector.detect.return_value = system
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
-    monkeypatch.setattr("diogenos.cli.SystemDetector", lambda: detector)
 
     result = CliRunner().invoke(main, ["feature", "check", "pulsar"])
 
@@ -119,18 +122,16 @@ def test_feature_check_unsatisfied(
 
 @pytest.mark.cli
 def test_feature_check_unknown_feature(
-    monkeypatch: MonkeyPatch,
+    registry: Mock,
+    detector: Mock,
 ) -> None:
     """Verify that checking an unknown feature reports an error."""
-    registry = Mock()
     registry.get.side_effect = KeyError("unknown feature identifier: missing")
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
 
     result = CliRunner().invoke(main, ["feature", "check", "missing"])
 
     assert result.exit_code == 1
-    assert result.output == ("Error: missing is not a registered feature.\n")
+    assert result.output == "Error: missing is not a registered feature.\n"
     registry.get.assert_called_once_with("missing")
 
 
@@ -144,7 +145,11 @@ def test_feature_check_requires_feature_name() -> None:
 
 
 @pytest.mark.cli
-def test_feature_check_all(monkeypatch: MonkeyPatch) -> None:
+def test_feature_check_all(
+    registry: Mock,
+    detector: Mock,
+    system: System,
+) -> None:
     """Verify that --all checks every registered feature."""
     first_feature = Mock()
     first_feature.is_satisfied.return_value = True
@@ -152,19 +157,11 @@ def test_feature_check_all(monkeypatch: MonkeyPatch) -> None:
     second_feature = Mock()
     second_feature.is_satisfied.return_value = True
 
-    registry = Mock()
     registry.list.return_value = ("pulsar", "tmux")
     registry.get.side_effect = [
         lambda: first_feature,
         lambda: second_feature,
     ]
-
-    system = Mock(spec=System)
-    detector = Mock()
-    detector.detect.return_value = system
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
-    monkeypatch.setattr("diogenos.cli.SystemDetector", lambda: detector)
 
     result = CliRunner().invoke(main, ["feature", "check", "--all"])
 
@@ -180,7 +177,11 @@ def test_feature_check_all(monkeypatch: MonkeyPatch) -> None:
 
 
 @pytest.mark.cli
-def test_feature_check_multiple_features(monkeypatch: MonkeyPatch) -> None:
+def test_feature_check_multiple_features(
+    registry: Mock,
+    detector: Mock,
+    system: System,
+) -> None:
     """Verify that multiple specified features are checked."""
     first_feature = Mock()
     first_feature.is_satisfied.return_value = True
@@ -188,18 +189,10 @@ def test_feature_check_multiple_features(monkeypatch: MonkeyPatch) -> None:
     second_feature = Mock()
     second_feature.is_satisfied.return_value = True
 
-    registry = Mock()
     registry.get.side_effect = [
         lambda: first_feature,
         lambda: second_feature,
     ]
-
-    system = Mock(spec=System)
-    detector = Mock()
-    detector.detect.return_value = system
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
-    monkeypatch.setattr("diogenos.cli.SystemDetector", lambda: detector)
 
     result = CliRunner().invoke(
         main,
@@ -230,24 +223,18 @@ def test_feature_check_all_rejects_feature_names() -> None:
 
 @pytest.mark.cli
 def test_feature_check_unknown_feature_continues(
-    monkeypatch: MonkeyPatch,
+    registry: Mock,
+    detector: Mock,
+    system: System,
 ) -> None:
     """Verify that checking continues after an unknown feature."""
     selected_feature = Mock()
     selected_feature.is_satisfied.return_value = True
 
-    registry = Mock()
     registry.get.side_effect = [
         KeyError("unknown feature identifier: missing"),
         lambda: selected_feature,
     ]
-
-    system = Mock(spec=System)
-    detector = Mock()
-    detector.detect.return_value = system
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
-    monkeypatch.setattr("diogenos.cli.SystemDetector", lambda: detector)
 
     result = CliRunner().invoke(
         main,
@@ -265,20 +252,13 @@ def test_feature_check_unknown_feature_continues(
 
 @pytest.mark.cli
 def test_feature_install_succeeds(
-    monkeypatch: MonkeyPatch,
+    registry: Mock,
+    detector: Mock,
+    system: System,
 ) -> None:
     """Verify that installing a feature succeeds."""
     selected_feature = Mock()
-
-    registry = Mock()
     registry.get.return_value = lambda: selected_feature
-
-    system = Mock(spec=System)
-    detector = Mock()
-    detector.detect.return_value = system
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
-    monkeypatch.setattr("diogenos.cli.SystemDetector", lambda: detector)
 
     result = CliRunner().invoke(
         main,
@@ -294,24 +274,18 @@ def test_feature_install_succeeds(
 
 @pytest.mark.cli
 def test_feature_install_multiple_features(
-    monkeypatch: MonkeyPatch,
+    registry: Mock,
+    detector: Mock,
+    system: System,
 ) -> None:
     """Verify that multiple features are installed."""
     first_feature = Mock()
     second_feature = Mock()
 
-    registry = Mock()
     registry.get.side_effect = [
         lambda: first_feature,
         lambda: second_feature,
     ]
-
-    system = Mock(spec=System)
-    detector = Mock()
-    detector.detect.return_value = system
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
-    monkeypatch.setattr("diogenos.cli.SystemDetector", lambda: detector)
 
     result = CliRunner().invoke(
         main,
@@ -332,25 +306,19 @@ def test_feature_install_multiple_features(
 
 @pytest.mark.cli
 def test_feature_install_all(
-    monkeypatch: MonkeyPatch,
+    registry: Mock,
+    detector: Mock,
+    system: System,
 ) -> None:
     """Verify that --all installs every registered feature."""
     first_feature = Mock()
     second_feature = Mock()
 
-    registry = Mock()
     registry.list.return_value = ("pulsar", "tmux")
     registry.get.side_effect = [
         lambda: first_feature,
         lambda: second_feature,
     ]
-
-    system = Mock(spec=System)
-    detector = Mock()
-    detector.detect.return_value = system
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
-    monkeypatch.setattr("diogenos.cli.SystemDetector", lambda: detector)
 
     result = CliRunner().invoke(
         main,
@@ -371,13 +339,11 @@ def test_feature_install_all(
 
 @pytest.mark.cli
 def test_feature_install_unknown_feature(
-    monkeypatch: MonkeyPatch,
+    registry: Mock,
+    detector: Mock,
 ) -> None:
     """Verify that installing an unknown feature reports an error."""
-    registry = Mock()
     registry.get.side_effect = KeyError("unknown feature identifier: missing")
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
 
     result = CliRunner().invoke(
         main,
@@ -385,29 +351,23 @@ def test_feature_install_unknown_feature(
     )
 
     assert result.exit_code == 1
-    assert result.output == ("Error: missing is not a registered feature.\n")
+    assert result.output == "Error: missing is not a registered feature.\n"
     registry.get.assert_called_once_with("missing")
 
 
 @pytest.mark.cli
 def test_feature_install_continues_after_unknown_feature(
-    monkeypatch: MonkeyPatch,
+    registry: Mock,
+    detector: Mock,
+    system: System,
 ) -> None:
     """Verify that installation continues after an unknown feature."""
     selected_feature = Mock()
 
-    registry = Mock()
     registry.get.side_effect = [
         KeyError("unknown feature identifier: missing"),
         lambda: selected_feature,
     ]
-
-    system = Mock(spec=System)
-    detector = Mock()
-    detector.detect.return_value = system
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
-    monkeypatch.setattr("diogenos.cli.SystemDetector", lambda: detector)
 
     result = CliRunner().invoke(
         main,
@@ -425,7 +385,9 @@ def test_feature_install_continues_after_unknown_feature(
 
 @pytest.mark.cli
 def test_feature_install_continues_after_installation_failure(
-    monkeypatch: MonkeyPatch,
+    registry: Mock,
+    detector: Mock,
+    system: System,
 ) -> None:
     """Verify that installation continues after a feature fails."""
     failed_feature = Mock()
@@ -433,18 +395,10 @@ def test_feature_install_continues_after_installation_failure(
 
     successful_feature = Mock()
 
-    registry = Mock()
     registry.get.side_effect = [
         lambda: failed_feature,
         lambda: successful_feature,
     ]
-
-    system = Mock(spec=System)
-    detector = Mock()
-    detector.detect.return_value = system
-
-    monkeypatch.setattr("diogenos.cli.FeatureRegistry", lambda: registry)
-    monkeypatch.setattr("diogenos.cli.SystemDetector", lambda: detector)
 
     result = CliRunner().invoke(
         main,
@@ -480,3 +434,101 @@ def test_feature_install_all_rejects_feature_names() -> None:
 
     assert result.exit_code == 2
     assert "Specify either --all or feature IDs, not both." in result.output
+
+
+@pytest.mark.cli
+def test_feature_components(registry: Mock) -> None:
+    """Verify that the feature components command lists components."""
+    selected_feature = Mock()
+    selected_feature.resolved_components = (
+        Mock(registry_id="firefox"),
+        Mock(registry_id="docker"),
+    )
+    registry.get.return_value = lambda: selected_feature
+
+    result = CliRunner().invoke(
+        main,
+        ["feature", "components", "desktop"],
+    )
+
+    assert result.exit_code == 0
+    assert result.output == ("Feature 'desktop':\n" "  firefox\n" "  docker\n")
+    registry.get.assert_called_once_with("desktop")
+
+
+@pytest.mark.cli
+def test_feature_components_multiple_features(registry: Mock) -> None:
+    """Verify that components from multiple features are listed."""
+    first_feature = Mock()
+    first_feature.resolved_components = (Mock(registry_id="firefox"),)
+
+    second_feature = Mock()
+    second_feature.resolved_components = (Mock(registry_id="docker"),)
+
+    registry.get.side_effect = [
+        lambda: first_feature,
+        lambda: second_feature,
+    ]
+
+    result = CliRunner().invoke(
+        main,
+        ["feature", "components", "desktop", "server"],
+    )
+
+    assert result.exit_code == 0
+    assert result.output == (
+        "Feature 'desktop':\n" "  firefox\n" "Feature 'server':\n" "  docker\n"
+    )
+    registry.get.assert_any_call("desktop")
+    registry.get.assert_any_call("server")
+
+
+@pytest.mark.cli
+def test_feature_components_unknown_feature(registry: Mock) -> None:
+    """Verify that an unknown feature reports an error."""
+    registry.get.side_effect = KeyError("unknown feature identifier: missing")
+
+    result = CliRunner().invoke(
+        main,
+        ["feature", "components", "missing"],
+    )
+
+    assert result.exit_code == 1
+    assert result.output == "Error: missing is not a registered feature.\n"
+    registry.get.assert_called_once_with("missing")
+
+
+@pytest.mark.cli
+def test_feature_components_continues_after_unknown_feature(
+    registry: Mock,
+) -> None:
+    """Verify that component listing continues after an unknown feature."""
+    selected_feature = Mock()
+    selected_feature.resolved_components = (Mock(registry_id="firefox"),)
+
+    registry.get.side_effect = [
+        KeyError("unknown feature identifier: missing"),
+        lambda: selected_feature,
+    ]
+
+    result = CliRunner().invoke(
+        main,
+        ["feature", "components", "missing", "desktop"],
+    )
+
+    assert result.exit_code == 1
+    assert result.output == (
+        "Error: missing is not a registered feature.\n"
+        "Feature 'desktop':\n"
+        "  firefox\n"
+    )
+    assert registry.get.call_count == 2
+
+
+@pytest.mark.cli
+def test_feature_components_requires_feature_name() -> None:
+    """Verify that feature components requires a feature ID."""
+    result = CliRunner().invoke(main, ["feature", "components"])
+
+    assert result.exit_code == 2
+    assert "Missing argument 'REGISTRY_IDS...'" in result.output
