@@ -67,6 +67,8 @@ class AlternateMethodStub(Method):
 class APTImplementationStub(SharedImplementationStub):
     """Provide an implementation with APT support."""
 
+    DEFAULT_METHOD = MethodType.APT
+
     METHODS = {
         MethodType.APT: (
             MethodStub,
@@ -77,6 +79,8 @@ class APTImplementationStub(SharedImplementationStub):
 
 class SnapImplementationStub(SharedImplementationStub):
     """Provide an implementation with Snap support."""
+
+    DEFAULT_METHOD = MethodType.SNAP
 
     METHODS = {
         MethodType.SNAP: (
@@ -91,6 +95,8 @@ class CombinedImplementationStub(
     SnapImplementationStub,
 ):
     """Provide an implementation with APT and Snap support."""
+
+    DEFAULT_METHOD = MethodType.APT
 
 
 @pytest.mark.component
@@ -205,7 +211,7 @@ def test_implementation_overrides_inherited_method() -> None:
 
 @pytest.mark.component
 def test_implementation_resolves_default_method() -> None:
-    """Test that the first registered method is selected by default."""
+    """Test that the declared default method is selected."""
     implementation = APTImplementationStub()
 
     assert isinstance(implementation.resolve_method(), MethodStub)
@@ -220,6 +226,54 @@ def test_implementation_resolves_explicit_method() -> None:
         implementation.resolve_method(MethodType.SNAP),
         AlternateMethodStub,
     )
+
+
+@pytest.mark.component
+def test_implementation_rejects_missing_default() -> None:
+    """Test that registered methods require a default."""
+
+    class MissingDefaultImplementation(SharedImplementationStub):
+        """Provide an implementation without a default method."""
+
+        METHODS = {
+            MethodType.APT: (
+                MethodStub,
+                MethodOptionsStub(),
+            ),
+        }
+
+    implementation = MissingDefaultImplementation()
+
+    with pytest.raises(
+        ValueError,
+        match="no default installation method configured",
+    ):
+        implementation.resolve_method()
+
+
+@pytest.mark.component
+def test_implementation_rejects_unsupported_default() -> None:
+    """Test that an unsupported default raises an error."""
+
+    class InvalidDefaultImplementation(SharedImplementationStub):
+        """Provide an implementation with an unsupported default."""
+
+        DEFAULT_METHOD = MethodType.SNAP
+
+        METHODS = {
+            MethodType.APT: (
+                MethodStub,
+                MethodOptionsStub(),
+            ),
+        }
+
+    implementation = InvalidDefaultImplementation()
+
+    with pytest.raises(
+        ValueError,
+        match="unsupported installation method: snap",
+    ):
+        implementation.resolve_method()
 
 
 @pytest.mark.component

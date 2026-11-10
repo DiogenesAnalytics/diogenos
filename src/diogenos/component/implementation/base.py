@@ -18,6 +18,8 @@ class ComponentImplementation(ABC):
 
     OS: str
 
+    DEFAULT_METHOD: Optional[MethodType] = None
+
     METHODS: Dict[
         MethodType,
         Tuple[Type[Method], MethodOptions],
@@ -58,21 +60,19 @@ class ComponentImplementation(ABC):
         method_type: Optional[MethodType] = None,
     ) -> Optional[Method]:
         """Resolve an installation method."""
-        if not self.METHODS:
-            if method_type is not None:
-                raise ValueError(
-                    f"unsupported installation method: {method_type.value}",
-                )
+        selected_method_type = (
+            method_type if method_type is not None else self.DEFAULT_METHOD
+        )
+
+        if selected_method_type is None:
+            if self.METHODS:
+                raise ValueError("no default installation method configured")
 
             return None
 
-        selected_method_type = (
-            method_type if method_type is not None else next(iter(self.METHODS))
-        )
-
         if selected_method_type not in self.METHODS:
             raise ValueError(
-                f"unsupported installation method: {selected_method_type.value}",
+                f"unsupported installation method: " f"{selected_method_type.value}",
             )
 
         method_class, options = self.METHODS[selected_method_type]
