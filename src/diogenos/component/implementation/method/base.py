@@ -4,8 +4,6 @@ from abc import ABC
 from abc import abstractmethod
 from typing import Tuple
 
-from diogenos.system.base import System
-
 from .options import MethodOptions
 
 
@@ -17,9 +15,8 @@ class Method(ABC):
         self.options = options
 
     @abstractmethod
-    def install(
+    def build(
         self,
-        system: System,
         packages: Tuple[str, ...],
-    ) -> None:
-        """Install the specified packages."""
+    ) -> Tuple[str, ...]:
+        """Build the installation command."""

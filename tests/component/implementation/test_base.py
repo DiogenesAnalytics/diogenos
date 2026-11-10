@@ -45,23 +45,17 @@ class MethodOptionsStub(MethodOptions):
 class MethodStub(Method):
     """Provide a dummy installation method."""
 
-    def install(
-        self,
-        system: System,
-        packages: Tuple[str, ...],
-    ) -> None:
-        """Install the specified packages."""
+    def build(self, packages: Tuple[str, ...]) -> Tuple[str, ...]:
+        """Build a test installation command."""
+        return packages
 
 
 class AlternateMethodStub(Method):
     """Provide an alternate dummy installation method."""
 
-    def install(
-        self,
-        system: System,
-        packages: Tuple[str, ...],
-    ) -> None:
-        """Install the specified packages."""
+    def build(self, packages: Tuple[str, ...]) -> Tuple[str, ...]:
+        """Build an alternate test installation command."""
+        return packages
 
 
 class APTImplementationStub(SharedImplementationStub):

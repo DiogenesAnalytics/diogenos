@@ -6,7 +6,6 @@ import pytest
 
 from diogenos.component.implementation.method.base import Method
 from diogenos.component.implementation.method.options import MethodOptions
-from diogenos.system.base import System
 
 
 class DummyMethodOptions(MethodOptions):
@@ -16,12 +15,9 @@ class DummyMethodOptions(MethodOptions):
 class DummyMethod(Method):
     """Provide a test installation method."""
 
-    def install(
-        self,
-        system: System,
-        packages: Tuple[str, ...],
-    ) -> None:
-        """Install the specified packages."""
+    def build(self, packages: Tuple[str, ...]) -> Tuple[str, ...]:
+        """Build a test installation command."""
+        return packages
 
 
 @pytest.fixture
@@ -37,8 +33,16 @@ def test_initialization(options: DummyMethodOptions) -> None:
     assert method.options is options
 
 
-def test_install_is_abstract(options: DummyMethodOptions) -> None:
-    """Test that install must be implemented by subclasses."""
+def test_build(options: DummyMethodOptions) -> None:
+    """Test building an installation command."""
+    method = DummyMethod(options)
+    packages = ("firefox",)
+
+    assert method.build(packages) == packages
+
+
+def test_build_is_abstract(options: DummyMethodOptions) -> None:
+    """Test that build must be implemented by subclasses."""
 
     class IncompleteMethod(Method):
         """Provide an incomplete installation method."""
