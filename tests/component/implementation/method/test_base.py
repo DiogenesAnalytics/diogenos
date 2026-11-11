@@ -5,6 +5,8 @@ from typing import Tuple
 import pytest
 
 from diogenos.component.implementation.method.base import Method
+from diogenos.component.implementation.method.operations import APTOperation
+from diogenos.component.implementation.method.operations import Operation
 from diogenos.component.implementation.method.options import MethodOptions
 
 
@@ -15,9 +17,13 @@ class DummyMethodOptions(MethodOptions):
 class DummyMethod(Method):
     """Provide a test installation method."""
 
-    def build(self, packages: Tuple[str, ...]) -> Tuple[str, ...]:
+    def build(
+        self,
+        operation: Operation,
+        arguments: Tuple[str, ...],
+    ) -> Tuple[str, ...]:
         """Build a test installation command."""
-        return packages
+        return arguments
 
 
 @pytest.fixture
@@ -38,7 +44,7 @@ def test_build(options: DummyMethodOptions) -> None:
     method = DummyMethod(options)
     packages = ("firefox",)
 
-    assert method.build(packages) == packages
+    assert method.build(APTOperation.INSTALL, packages) == packages
 
 
 def test_build_is_abstract(options: DummyMethodOptions) -> None:

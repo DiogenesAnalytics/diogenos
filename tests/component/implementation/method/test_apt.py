@@ -6,6 +6,7 @@ import pytest
 
 from diogenos.component.implementation.method.apt import APTMethod
 from diogenos.component.implementation.method.apt import APTOptions
+from diogenos.component.implementation.method.operations import APTOperation
 
 
 @pytest.mark.parametrize(
@@ -55,4 +56,4 @@ def test_build(
 
     method = APTMethod(options)
 
-    assert method.build(packages) == expected
+    assert method.build(APTOperation.INSTALL, packages) == expected

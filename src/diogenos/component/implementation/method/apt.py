@@ -5,6 +5,8 @@ from typing import Tuple
 
 from ..execution import prepare_command
 from .base import Method
+from .operations import APTOperation
+from .operations import Operation
 from .options import MethodOptions
 
 
@@ -19,22 +21,35 @@ class APTOptions(MethodOptions):
 class APTMethod(Method):
     """Define the APT package installation method."""
 
+    OPERATIONS = (APTOperation.INSTALL,)
+
     options: APTOptions
 
     def __init__(self, options: APTOptions) -> None:
         """Initialize the APT method."""
         super().__init__(options)
 
-    def build(self, packages: Tuple[str, ...]) -> Tuple[str, ...]:
-        """Build the APT installation command."""
-        command = ["apt-get", "install"]
+    def build(
+        self,
+        operation: Operation,
+        arguments: Tuple[str, ...],
+    ) -> Tuple[str, ...]:
+        """Build a command for the specified operation."""
+        if not self.supports(operation):
+            raise ValueError(f"unsupported APT operation: {operation}")
 
-        if self.options.assume_yes:
-            command.append("-y")
+        match operation:
+            case APTOperation.INSTALL:
+                command = ["apt-get", "install"]
 
-        if self.options.no_install_recommends:
-            command.append("--no-install-recommends")
+                if self.options.assume_yes:
+                    command.append("-y")
 
-        command.extend(packages)
+                if self.options.no_install_recommends:
+                    command.append("--no-install-recommends")
 
-        return tuple(prepare_command(command, privileged=True))
+                command.extend(arguments)
+
+                return tuple(prepare_command(command, privileged=True))
+
+        raise ValueError(f"unsupported APT operation: {operation}")

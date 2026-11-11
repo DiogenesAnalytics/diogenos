@@ -6,6 +6,7 @@ import pytest
 
 from diogenos.component import ComponentImplementation
 from diogenos.component.implementation.method.base import Method
+from diogenos.component.implementation.method.operations import Operation
 from diogenos.component.implementation.method.options import MethodOptions
 from diogenos.component.implementation.method.types import MethodType
 from diogenos.system.base import System
@@ -45,17 +46,25 @@ class MethodOptionsStub(MethodOptions):
 class MethodStub(Method):
     """Provide a dummy installation method."""
 
-    def build(self, packages: Tuple[str, ...]) -> Tuple[str, ...]:
+    def build(
+        self,
+        operation: Operation,
+        arguments: Tuple[str, ...],
+    ) -> Tuple[str, ...]:
         """Build a test installation command."""
-        return packages
+        return arguments
 
 
 class AlternateMethodStub(Method):
     """Provide an alternate dummy installation method."""
 
-    def build(self, packages: Tuple[str, ...]) -> Tuple[str, ...]:
+    def build(
+        self,
+        operation: Operation,
+        arguments: Tuple[str, ...],
+    ) -> Tuple[str, ...]:
         """Build an alternate test installation command."""
-        return packages
+        return arguments
 
 
 class APTImplementationStub(SharedImplementationStub):

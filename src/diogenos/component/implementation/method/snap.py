@@ -5,6 +5,8 @@ from typing import Tuple
 
 from ..execution import prepare_command
 from .base import Method
+from .operations import Operation
+from .operations import SnapOperation
 from .options import MethodOptions
 
 
@@ -19,22 +21,35 @@ class SnapOptions(MethodOptions):
 class SnapMethod(Method):
     """Define the Snap package installation method."""
 
+    OPERATIONS = (SnapOperation.INSTALL,)
+
     options: SnapOptions
 
     def __init__(self, options: SnapOptions) -> None:
         """Initialize the Snap method."""
         super().__init__(options)
 
-    def build(self, packages: Tuple[str, ...]) -> Tuple[str, ...]:
-        """Build the Snap installation command."""
-        command = ["snap", "install"]
+    def build(
+        self,
+        operation: Operation,
+        arguments: Tuple[str, ...],
+    ) -> Tuple[str, ...]:
+        """Build a command for the specified operation."""
+        if not self.supports(operation):
+            raise ValueError(f"unsupported Snap operation: {operation}")
 
-        if self.options.classic:
-            command.append("--classic")
+        match operation:
+            case SnapOperation.INSTALL:
+                command = ["snap", "install"]
 
-        if self.options.channel != "stable":
-            command.extend(["--channel", self.options.channel])
+                if self.options.classic:
+                    command.append("--classic")
 
-        command.extend(packages)
+                if self.options.channel != "stable":
+                    command.extend(["--channel", self.options.channel])
 
-        return tuple(prepare_command(command, privileged=True))
+                command.extend(arguments)
+
+                return tuple(prepare_command(command, privileged=True))
+
+        raise ValueError(f"unsupported Snap operation: {operation}")

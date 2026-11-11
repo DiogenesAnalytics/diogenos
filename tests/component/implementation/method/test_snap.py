@@ -4,6 +4,7 @@ from typing import Tuple
 
 import pytest
 
+from diogenos.component.implementation.method.operations import SnapOperation
 from diogenos.component.implementation.method.snap import SnapMethod
 from diogenos.component.implementation.method.snap import SnapOptions
 
@@ -68,4 +69,4 @@ def test_build(
 
     method = SnapMethod(options)
 
-    assert method.build(packages) == expected
+    assert method.build(SnapOperation.INSTALL, packages) == expected
