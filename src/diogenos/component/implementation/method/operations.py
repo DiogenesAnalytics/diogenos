@@ -10,6 +10,8 @@ class Operation(Enum):
 class APTOperation(Operation):
     """Define APT operations."""
 
+    UPDATE = ("update",)
+    UPGRADE = ("upgrade",)
     INSTALL = ("install",)
 
 
