@@ -4,6 +4,8 @@ from abc import ABC
 from abc import abstractmethod
 from typing import Tuple
 
+from diogenos.component.implementation.command import Command
+
 from .operations import Operation
 from .options import MethodOptions
 
@@ -26,5 +28,5 @@ class Method(ABC):
         self,
         operation: Operation,
         arguments: Tuple[str, ...] = (),
-    ) -> Tuple[str, ...]:
+    ) -> Command:
         """Build a command for the specified operation."""

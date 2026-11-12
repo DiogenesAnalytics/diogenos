@@ -4,6 +4,7 @@ from typing import Tuple
 
 import pytest
 
+from diogenos.component.implementation.command import Command
 from diogenos.component.implementation.method.apt import APTMethod
 from diogenos.component.implementation.method.apt import APTOptions
 from diogenos.component.implementation.method.operations import APTOperation
@@ -56,4 +57,6 @@ def test_build(
 
     method = APTMethod(options)
 
-    assert method.build(APTOperation.INSTALL, packages) == expected
+    command = method.build(APTOperation.INSTALL, packages)
+
+    assert command == Command.from_arguments(expected)

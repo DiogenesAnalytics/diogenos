@@ -4,6 +4,7 @@ from typing import Tuple
 
 import pytest
 
+from diogenos.component.implementation.command import Command
 from diogenos.component.implementation.method.base import Method
 from diogenos.component.implementation.method.operations import APTOperation
 from diogenos.component.implementation.method.operations import Operation
@@ -21,9 +22,9 @@ class DummyMethod(Method):
         self,
         operation: Operation,
         arguments: Tuple[str, ...] = (),
-    ) -> Tuple[str, ...]:
+    ) -> Command:
         """Build a test installation command."""
-        return arguments
+        return Command.from_arguments(arguments)
 
 
 @pytest.fixture
@@ -46,7 +47,10 @@ def test_build(options: DummyMethodOptions) -> None:
     method = DummyMethod(options)
     packages = ("firefox",)
 
-    assert method.build(APTOperation.INSTALL, packages) == packages
+    command = method.build(APTOperation.INSTALL, packages)
+
+    assert isinstance(command, Command)
+    assert command.commands == (packages,)
 
 
 @pytest.mark.component

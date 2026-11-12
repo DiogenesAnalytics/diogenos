@@ -5,6 +5,7 @@ from typing import Tuple
 import pytest
 
 from diogenos.component import ComponentImplementation
+from diogenos.component.implementation.command import Command
 from diogenos.component.implementation.method.base import Method
 from diogenos.component.implementation.method.operations import Operation
 from diogenos.component.implementation.method.options import MethodOptions
@@ -50,9 +51,9 @@ class MethodStub(Method):
         self,
         operation: Operation,
         arguments: Tuple[str, ...] = (),
-    ) -> Tuple[str, ...]:
+    ) -> Command:
         """Build a test installation command."""
-        return arguments
+        return Command.from_arguments(arguments)
 
 
 class AlternateMethodStub(Method):
@@ -62,9 +63,9 @@ class AlternateMethodStub(Method):
         self,
         operation: Operation,
         arguments: Tuple[str, ...] = (),
-    ) -> Tuple[str, ...]:
+    ) -> Command:
         """Build an alternate test installation command."""
-        return arguments
+        return Command.from_arguments(arguments)
 
 
 class APTImplementationStub(SharedImplementationStub):

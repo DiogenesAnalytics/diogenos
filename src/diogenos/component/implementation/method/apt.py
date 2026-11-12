@@ -3,7 +3,9 @@
 from dataclasses import dataclass
 from typing import Tuple
 
-from ..execution import prepare_command
+from diogenos.component.implementation.command import Command
+from diogenos.component.implementation.execution import prepare_command
+
 from .base import Method
 from .operations import APTOperation
 from .operations import Operation
@@ -33,7 +35,7 @@ class APTMethod(Method):
         self,
         operation: Operation,
         arguments: Tuple[str, ...] = (),
-    ) -> Tuple[str, ...]:
+    ) -> Command:
         """Build a command for the specified operation."""
         if not self.supports(operation):
             raise ValueError(f"unsupported APT operation: {operation}")
@@ -50,6 +52,8 @@ class APTMethod(Method):
 
                 command.extend(arguments)
 
-                return tuple(prepare_command(command, privileged=True))
+                return Command.from_arguments(
+                    tuple(prepare_command(command, privileged=True)),
+                )
 
         raise ValueError(f"unsupported APT operation: {operation}")
