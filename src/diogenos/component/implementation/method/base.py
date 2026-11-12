@@ -25,6 +25,6 @@ class Method(ABC):
     def build(
         self,
         operation: Operation,
-        arguments: Tuple[str, ...],
+        arguments: Tuple[str, ...] = (),
     ) -> Tuple[str, ...]:
         """Build a command for the specified operation."""

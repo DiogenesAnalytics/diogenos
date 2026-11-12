@@ -49,7 +49,7 @@ class MethodStub(Method):
     def build(
         self,
         operation: Operation,
-        arguments: Tuple[str, ...],
+        arguments: Tuple[str, ...] = (),
     ) -> Tuple[str, ...]:
         """Build a test installation command."""
         return arguments
@@ -61,7 +61,7 @@ class AlternateMethodStub(Method):
     def build(
         self,
         operation: Operation,
-        arguments: Tuple[str, ...],
+        arguments: Tuple[str, ...] = (),
     ) -> Tuple[str, ...]:
         """Build an alternate test installation command."""
         return arguments
