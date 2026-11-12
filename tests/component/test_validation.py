@@ -3,9 +3,12 @@
 import subprocess
 from unittest.mock import Mock
 
+import pytest
+
 from diogenos.component.validation import validate_command
 
 
+@pytest.mark.component
 def test_validate_command_returns_true_when_command_succeeds() -> None:
     """Return True when the command exits successfully."""
     run = Mock(
@@ -28,6 +31,7 @@ def test_validate_command_returns_true_when_command_succeeds() -> None:
     )
 
 
+@pytest.mark.component
 def test_validate_command_returns_false_when_command_fails() -> None:
     """Return False when the command exits unsuccessfully."""
     run = Mock(
@@ -50,6 +54,7 @@ def test_validate_command_returns_false_when_command_fails() -> None:
     )
 
 
+@pytest.mark.component
 def test_validate_command_returns_false_when_executable_is_missing() -> None:
     """Return False when the executable cannot be found."""
     run = Mock(side_effect=FileNotFoundError)

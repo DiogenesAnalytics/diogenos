@@ -32,6 +32,7 @@ def options() -> DummyMethodOptions:
     return DummyMethodOptions()
 
 
+@pytest.mark.component
 def test_initialization(options: DummyMethodOptions) -> None:
     """Test initialization with method options."""
     method = DummyMethod(options)
@@ -39,6 +40,7 @@ def test_initialization(options: DummyMethodOptions) -> None:
     assert method.options is options
 
 
+@pytest.mark.component
 def test_build(options: DummyMethodOptions) -> None:
     """Test building an installation command."""
     method = DummyMethod(options)
@@ -47,6 +49,7 @@ def test_build(options: DummyMethodOptions) -> None:
     assert method.build(APTOperation.INSTALL, packages) == packages
 
 
+@pytest.mark.component
 def test_build_is_abstract(options: DummyMethodOptions) -> None:
     """Test that build must be implemented by subclasses."""
 

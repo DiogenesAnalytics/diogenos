@@ -12,6 +12,7 @@ from diogenos.component.implementation.execution import prepare_command
 from diogenos.component.implementation.execution import privileged_command
 
 
+@pytest.mark.component
 def test_privileged_command_as_root(monkeypatch: MonkeyPatch) -> None:
     """Return the original command when running as root."""
     monkeypatch.setattr("os.geteuid", lambda: 0)
@@ -21,6 +22,7 @@ def test_privileged_command_as_root(monkeypatch: MonkeyPatch) -> None:
     assert command == ["apt-get", "update"]
 
 
+@pytest.mark.component
 def test_privileged_command_as_non_root(monkeypatch: MonkeyPatch) -> None:
     """Prefix commands with sudo when not running as root."""
     monkeypatch.setattr("os.geteuid", lambda: 1000)
@@ -30,6 +32,7 @@ def test_privileged_command_as_non_root(monkeypatch: MonkeyPatch) -> None:
     assert command == ["sudo", "apt-get", "update"]
 
 
+@pytest.mark.component
 def test_privileged_command_does_not_modify_input(
     monkeypatch: MonkeyPatch,
 ) -> None:
@@ -43,6 +46,7 @@ def test_privileged_command_does_not_modify_input(
     assert original == ["apt-get", "update"]
 
 
+@pytest.mark.component
 def test_prepare_command_without_privileges() -> None:
     """Return the original command without privilege escalation."""
     command = prepare_command(["git", "--version"])
@@ -50,6 +54,7 @@ def test_prepare_command_without_privileges() -> None:
     assert command == ["git", "--version"]
 
 
+@pytest.mark.component
 def test_prepare_command_privileged_as_root(
     monkeypatch: MonkeyPatch,
 ) -> None:
@@ -61,6 +66,7 @@ def test_prepare_command_privileged_as_root(
     assert command == ["apt-get", "update"]
 
 
+@pytest.mark.component
 def test_prepare_command_privileged_as_non_root(
     monkeypatch: MonkeyPatch,
 ) -> None:
@@ -72,6 +78,7 @@ def test_prepare_command_privileged_as_non_root(
     assert command == ["sudo", "apt-get", "update"]
 
 
+@pytest.mark.component
 def test_download_file(
     tmp_path: Path,
     monkeypatch: MonkeyPatch,
@@ -99,6 +106,7 @@ def test_download_file(
     assert list(tmp_path.iterdir()) == [destination]
 
 
+@pytest.mark.component
 def test_download_file_without_content_length(
     tmp_path: Path,
     monkeypatch: MonkeyPatch,
@@ -126,6 +134,7 @@ def test_download_file_without_content_length(
     assert list(tmp_path.iterdir()) == [destination]
 
 
+@pytest.mark.component
 def test_download_file_incomplete(
     tmp_path: Path,
     monkeypatch: MonkeyPatch,
@@ -150,6 +159,7 @@ def test_download_file_incomplete(
     assert list(tmp_path.iterdir()) == []
 
 
+@pytest.mark.component
 def test_download_file_preserves_existing_destination(
     tmp_path: Path,
     monkeypatch: MonkeyPatch,
