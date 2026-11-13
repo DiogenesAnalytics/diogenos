@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Tuple
 
 from diogenos.component.implementation.command import Command
-from diogenos.component.implementation.execution import prepare_command
 
 from .base import Method
 from .operations import APTOperation
@@ -53,7 +52,8 @@ class APTMethod(Method):
                 command.extend(arguments)
 
                 return Command.from_arguments(
-                    tuple(prepare_command(command, privileged=True)),
+                    tuple(command),
+                    privileged=True,
                 )
 
         raise ValueError(f"unsupported APT operation: {operation}")

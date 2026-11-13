@@ -51,7 +51,7 @@ def test_build(
 ) -> None:
     """Test building APT installation commands."""
     monkeypatch.setattr(
-        "diogenos.component.implementation.execution.os.geteuid",
+        "diogenos.component.implementation.command.os.geteuid",
         lambda: 1000,
     )
 
