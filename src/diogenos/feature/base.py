@@ -1,9 +1,11 @@
 """Define the feature abstraction."""
 
+from typing import Dict
 from typing import Optional
 from typing import Tuple
 
 from diogenos.component import Component
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.resolver import Resolver
 from diogenos.system.base import System
 
@@ -38,8 +40,15 @@ class Feature:
             component.is_satisfied(system) for component in self.resolved_components
         )
 
-    def apply(self, system: System) -> None:
+    def apply(
+        self,
+        system: System,
+        install_methods: Optional[Dict[str, InstallMethodType]] = None,
+    ) -> None:
         """Apply the feature to bring the system into its desired state."""
+        if install_methods is None:
+            install_methods = {}
+
         for component in self.resolved_components:
             if component.is_satisfied(system):
                 continue
@@ -50,9 +59,20 @@ class Feature:
             )
 
             implementation = resolved_component.implementation
+            component_id = component.registry_id
+
+            method = (
+                install_methods.get(component_id) if component_id is not None else None
+            )
+
+            if method is not None and method not in implementation.install_methods:
+                raise ValueError(
+                    f"unsupported installation method {method.value!r} "
+                    f"for component {component_id!r}"
+                )
 
             try:
-                implementation.install(system)
+                implementation.install(system, method)
             except Exception as error:
                 raise RuntimeError(
                     f"installation failed for component "
