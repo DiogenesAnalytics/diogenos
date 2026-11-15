@@ -2,12 +2,15 @@
 
 import subprocess
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import APTInstallMixin
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
@@ -24,8 +27,10 @@ def _is_keyd_satisfied(
     ) and validate_command(run, ["systemctl", "is-active", "--quiet", "keyd"])
 
 
-class UbuntuKeyd(UbuntuComponentImplementation):
+class UbuntuKeyd(UbuntuComponentImplementation, APTInstallMixin):
     """Define the Ubuntu implementation of Keyd."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -34,7 +39,11 @@ class UbuntuKeyd(UbuntuComponentImplementation):
         """Initialize the Ubuntu Keyd implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install and enable Keyd on Ubuntu."""
         self._run(
             prepare_command(["apt-get", "update"], privileged=True),
@@ -58,16 +67,24 @@ class UbuntuKeyd(UbuntuComponentImplementation):
             prepare_command(["apt-get", "update"], privileged=True),
             check=True,
         )
+        self.install_packages(system, ("keyd",), method)
         self._run(
             prepare_command(
-                ["apt-get", "install", "-y", "keyd"],
+                ["systemctl", "enable", "--now", "keyd"],
                 privileged=True,
             ),
             check=True,
         )
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
         self._run(
             prepare_command(
-                ["systemctl", "enable", "--now", "keyd"],
+                ["apt-get", "install", "-y", *packages],
                 privileged=True,
             ),
             check=True,

@@ -213,14 +213,14 @@ def test_debian_gnome_terminal_install(
     system: System,
     monkeypatch: MonkeyPatch,
 ) -> None:
-    """Test that the Debian implementation delegates installation."""
-    install = Mock()
-    monkeypatch.setattr(UbuntuGnomeTerminal, "install", install)
+    """Test that the Debian implementation delegates APT installation."""
+    install_apt = Mock()
+    monkeypatch.setattr(UbuntuGnomeTerminal, "install_apt", install_apt)
 
     component = DebianGnomeTerminal(run=run)
     component.install(system)
 
-    install.assert_called_once_with(system)
+    install_apt.assert_called_once_with(system, ("gnome-terminal",))
 
 
 def test_debian_gnome_terminal_verify(

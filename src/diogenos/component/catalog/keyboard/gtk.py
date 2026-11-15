@@ -2,11 +2,13 @@
 
 import subprocess
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.system.base import System
 
 
@@ -41,7 +43,11 @@ class UbuntuGtkEmacsKeymap(UbuntuComponentImplementation):
         """Initialize the Ubuntu GTK Emacs keymap implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Enable the GTK Emacs key theme on Ubuntu."""
         self._run(
             [

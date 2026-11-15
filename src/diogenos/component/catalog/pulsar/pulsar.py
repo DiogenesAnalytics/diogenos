@@ -6,6 +6,7 @@ import tempfile
 import urllib.request
 from pathlib import Path
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import Component
@@ -14,6 +15,8 @@ from diogenos.component import DebianComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.implementation.execution import download_file
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import APTInstallMixin
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
@@ -21,8 +24,10 @@ from diogenos.system.base import System
 PULSAR_RELEASE_URL = "https://api.github.com/repos/pulsar-edit/pulsar/releases/latest"
 
 
-class UbuntuPulsar(UbuntuComponentImplementation):
+class UbuntuPulsar(UbuntuComponentImplementation, APTInstallMixin):
     """Define the Ubuntu implementation of Pulsar."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -31,7 +36,11 @@ class UbuntuPulsar(UbuntuComponentImplementation):
         """Initialize the Ubuntu Pulsar implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install the latest official Pulsar release."""
         package_architecture = system.hardware.architecture
 
@@ -74,27 +83,35 @@ class UbuntuPulsar(UbuntuComponentImplementation):
 
             download_file(package_url, package_path)
 
-            self._run(
-                prepare_command(
-                    [
-                        "apt-get",
-                        "install",
-                        "-y",
-                        "libasound2t64",
-                        str(package_path),
-                    ],
-                    privileged=True,
-                ),
-                check=True,
+            self.install_packages(
+                system,
+                ("libasound2t64", str(package_path)),
+                method,
             )
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
+        self._run(
+            prepare_command(
+                ["apt-get", "install", "-y", *packages],
+                privileged=True,
+            ),
+            check=True,
+        )
 
     def verify(self, system: System) -> bool:
         """Verify that Pulsar is available."""
         return validate_command(self._run, ["pulsar", "--version"])
 
 
-class DebianPulsar(DebianComponentImplementation):
+class DebianPulsar(DebianComponentImplementation, APTInstallMixin):
     """Define the Debian implementation of Pulsar."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -103,9 +120,21 @@ class DebianPulsar(DebianComponentImplementation):
         """Initialize the Debian Pulsar implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Pulsar on Debian."""
-        UbuntuPulsar(run=self._run).install(system)
+        UbuntuPulsar(run=self._run).install(system, method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
+        UbuntuPulsar(run=self._run).install_apt(system, packages)
 
     def verify(self, system: System) -> bool:
         """Verify that Pulsar is available."""

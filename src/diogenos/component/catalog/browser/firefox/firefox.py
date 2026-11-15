@@ -2,6 +2,7 @@
 
 import subprocess
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import ArchComponentImplementation
@@ -11,6 +12,9 @@ from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import APTInstallMixin
+from diogenos.component.implementation.method import InstallMethodType
+from diogenos.component.implementation.method import SnapInstallMixin
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
@@ -24,8 +28,13 @@ def _is_firefox_satisfied(
     )
 
 
-class UbuntuFirefox(UbuntuComponentImplementation):
+class UbuntuFirefox(
+    UbuntuComponentImplementation,
+    SnapInstallMixin,
+):
     """Define the Ubuntu implementation of Firefox."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.SNAP
 
     def __init__(
         self,
@@ -34,10 +43,22 @@ class UbuntuFirefox(UbuntuComponentImplementation):
         """Initialize the Ubuntu Firefox implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Firefox on Ubuntu."""
+        self.install_packages(system, ("firefox",), method)
+
+    def install_snap(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install Firefox using Snap."""
         self._run(
-            prepare_command(["snap", "install", "firefox"], privileged=True),
+            prepare_command(["snap", "install", *packages], privileged=True),
             check=True,
         )
 
@@ -46,8 +67,13 @@ class UbuntuFirefox(UbuntuComponentImplementation):
         return validate_command(self._run, ["firefox", "--version"])
 
 
-class DebianFirefox(DebianComponentImplementation):
+class DebianFirefox(
+    DebianComponentImplementation,
+    APTInstallMixin,
+):
     """Define the Debian implementation of Firefox."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -56,15 +82,27 @@ class DebianFirefox(DebianComponentImplementation):
         """Initialize the Debian Firefox implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Firefox on Debian."""
+        self.install_packages(system, ("firefox-esr",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install Firefox using APT."""
         self._run(
             prepare_command(["apt-get", "update"], privileged=True),
             check=True,
         )
         self._run(
             prepare_command(
-                ["apt-get", "install", "-y", "firefox-esr"],
+                ["apt-get", "install", "-y", *packages],
                 privileged=True,
             ),
             check=True,
@@ -85,7 +123,11 @@ class FedoraFirefox(FedoraComponentImplementation):
         """Initialize the Fedora Firefox implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Firefox on Fedora."""
         self._run(
             prepare_command(
@@ -110,7 +152,11 @@ class ArchFirefox(ArchComponentImplementation):
         """Initialize the Arch Linux Firefox implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Firefox on Arch Linux."""
         self._run(
             prepare_command(

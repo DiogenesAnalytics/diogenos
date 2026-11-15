@@ -4,10 +4,12 @@ import subprocess
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.system.base import System
 
 
@@ -18,7 +20,11 @@ class ComponentImplementationStub(ComponentImplementation):
         """Determine whether the implementation supports the system."""
         return True
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install the component."""
         pass
 

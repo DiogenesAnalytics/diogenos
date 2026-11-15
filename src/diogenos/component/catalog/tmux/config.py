@@ -3,6 +3,7 @@
 import subprocess
 from pathlib import Path
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import AlpineComponentImplementation
@@ -14,6 +15,7 @@ from diogenos.component import FedoraComponentImplementation
 from diogenos.component import OpenSUSEComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.dependency import Dependency
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.system.base import System
 
 
@@ -44,7 +46,11 @@ class TmuxConfigImplementation:
         """Initialize the Tmux configuration implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install the Tmux configuration."""
         home = Path.home()
         repository = home / ".tmux"

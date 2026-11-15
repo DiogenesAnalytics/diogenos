@@ -6,6 +6,7 @@ from typing import Tuple
 
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.resolved import ResolvedComponent
 from diogenos.feature.base import Feature
 from diogenos.resolver import Resolver
@@ -28,7 +29,11 @@ class FakeImplementation(ComponentImplementation):
         self.install_called = False
         self.verify_called = False
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Record installation and apply its simulated effect."""
         self.install_called = True
 

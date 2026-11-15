@@ -403,7 +403,7 @@ def test_debian_pulsar_install(
     component = DebianPulsar(run=run)
     component.install(system)
 
-    install.assert_called_once_with(system)
+    install.assert_called_once_with(system, None)
 
 
 def test_debian_pulsar_verify(

@@ -2,14 +2,11 @@
 
 from abc import ABC
 from abc import abstractmethod
-from typing import Dict
 from typing import Optional
 from typing import Tuple
-from typing import Type
 
-from diogenos.component.implementation.method.base import Method
-from diogenos.component.implementation.method.options import MethodOptions
-from diogenos.component.implementation.method.types import MethodType
+from diogenos.component.implementation.method import InstallMethodMixin
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.system.base import System
 
 
@@ -17,70 +14,48 @@ class ComponentImplementation(ABC):
     """Define a component implementation."""
 
     OS: str
-
-    DEFAULT_METHOD: Optional[MethodType] = None
-
-    METHODS: Dict[
-        MethodType,
-        Tuple[Type[Method], MethodOptions],
-    ] = {}
-
-    def __init_subclass__(cls, **kwargs: object) -> None:
-        """Compose installation methods from parent implementations."""
-        super().__init_subclass__(**kwargs)
-
-        methods: Dict[
-            MethodType,
-            Tuple[Type[Method], MethodOptions],
-        ] = {}
-
-        for parent in cls.__bases__:
-            parent_methods = getattr(parent, "METHODS", {})
-
-            for method_type, method in parent_methods.items():
-                if method_type in methods:
-                    raise TypeError(
-                        f"duplicate installation method "
-                        f"{method_type.value} in "
-                        f"{cls.__name__}",
-                    )
-
-                methods[method_type] = method
-
-        methods.update(cls.__dict__.get("METHODS", {}))
-
-        cls.METHODS = methods
+    DEFAULT_INSTALL_METHOD: Optional[InstallMethodType] = None
 
     def supports(self, system: System) -> bool:
         """Determine whether this implementation supports the system."""
         return system.platform.os == self.OS
 
-    def resolve_method(
-        self,
-        method_type: Optional[MethodType] = None,
-    ) -> Optional[Method]:
-        """Resolve an installation method."""
-        selected_method_type = (
-            method_type if method_type is not None else self.DEFAULT_METHOD
+    @property
+    def install_methods(self) -> Tuple[InstallMethodType, ...]:
+        """Get the installation methods supported by this implementation."""
+        return tuple(
+            implementation.METHOD
+            for implementation in type(self).__mro__
+            if issubclass(implementation, InstallMethodMixin)
+            and implementation is not InstallMethodMixin
+            and "METHOD" in implementation.__dict__
         )
 
-        if selected_method_type is None:
-            if self.METHODS:
-                raise ValueError("no default installation method configured")
+    def install_packages(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
+        """Install packages using the selected installation method."""
+        if method is None:
+            method = self.DEFAULT_INSTALL_METHOD
 
-            return None
+        if method is None:
+            raise ValueError("No installation method specified.")
 
-        if selected_method_type not in self.METHODS:
-            raise ValueError(
-                f"unsupported installation method: " f"{selected_method_type.value}",
-            )
+        if method not in self.install_methods:
+            raise ValueError(f"Unsupported installation method: {method.value}")
 
-        method_class, options = self.METHODS[selected_method_type]
-
-        return method_class(options)
+        installer = getattr(self, f"install_{method.value}")
+        installer(system, packages)
 
     @abstractmethod
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install the component."""
 
     @abstractmethod

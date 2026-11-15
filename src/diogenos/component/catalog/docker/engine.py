@@ -2,18 +2,23 @@
 
 import subprocess
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import APTInstallMixin
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
-class UbuntuDockerEngine(UbuntuComponentImplementation):
+class UbuntuDockerEngine(UbuntuComponentImplementation, APTInstallMixin):
     """Define the Ubuntu implementation of Docker Engine."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -22,34 +27,44 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
         """Initialize the Ubuntu Docker Engine implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Docker Engine on Ubuntu."""
+        self.install_packages(
+            system,
+            (
+                "docker-ce",
+                "docker-ce-cli",
+                "containerd.io",
+                "docker-buildx-plugin",
+                "docker-compose-plugin",
+            ),
+            method,
+        )
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
         self._run(
             prepare_command(["apt-get", "update"], privileged=True),
             check=True,
         )
         self._run(
             prepare_command(
-                [
-                    "apt-get",
-                    "install",
-                    "-y",
-                    "ca-certificates",
-                    "curl",
-                ],
+                ["apt-get", "install", "-y", "ca-certificates", "curl"],
                 privileged=True,
             ),
             check=True,
         )
         self._run(
             prepare_command(
-                [
-                    "install",
-                    "-m",
-                    "0755",
-                    "-d",
-                    "/etc/apt/keyrings",
-                ],
+                ["install", "-m", "0755", "-d", "/etc/apt/keyrings"],
                 privileged=True,
             ),
             check=True,
@@ -69,11 +84,7 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
         )
         self._run(
             prepare_command(
-                [
-                    "chmod",
-                    "a+r",
-                    "/etc/apt/keyrings/docker.asc",
-                ],
+                ["chmod", "a+r", "/etc/apt/keyrings/docker.asc"],
                 privileged=True,
             ),
             check=True,
@@ -102,16 +113,7 @@ class UbuntuDockerEngine(UbuntuComponentImplementation):
         )
         self._run(
             prepare_command(
-                [
-                    "apt-get",
-                    "install",
-                    "-y",
-                    "docker-ce",
-                    "docker-ce-cli",
-                    "containerd.io",
-                    "docker-buildx-plugin",
-                    "docker-compose-plugin",
-                ],
+                ["apt-get", "install", "-y", *packages],
                 privileged=True,
             ),
             check=True,

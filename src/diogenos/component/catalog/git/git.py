@@ -2,6 +2,7 @@
 
 import subprocess
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import ArchComponentImplementation
@@ -11,12 +12,16 @@ from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import APTInstallMixin
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
-class UbuntuGit(UbuntuComponentImplementation):
+class UbuntuGit(UbuntuComponentImplementation, APTInstallMixin):
     """Define the Ubuntu implementation of Git."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -25,15 +30,27 @@ class UbuntuGit(UbuntuComponentImplementation):
         """Initialize the Ubuntu Git implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Git on Ubuntu."""
+        self.install_packages(system, ("git",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
         self._run(
             prepare_command(["apt-get", "update"], privileged=True),
             check=True,
         )
         self._run(
             prepare_command(
-                ["apt-get", "install", "-y", "git"],
+                ["apt-get", "install", "-y", *packages],
                 privileged=True,
             ),
             check=True,
@@ -44,8 +61,10 @@ class UbuntuGit(UbuntuComponentImplementation):
         return validate_command(self._run, ["git", "--version"])
 
 
-class DebianGit(DebianComponentImplementation):
+class DebianGit(DebianComponentImplementation, APTInstallMixin):
     """Define the Debian implementation of Git."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -54,19 +73,21 @@ class DebianGit(DebianComponentImplementation):
         """Initialize the Debian Git implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Git on Debian."""
-        self._run(
-            prepare_command(["apt-get", "update"], privileged=True),
-            check=True,
-        )
-        self._run(
-            prepare_command(
-                ["apt-get", "install", "-y", "git"],
-                privileged=True,
-            ),
-            check=True,
-        )
+        self.install_packages(system, ("git",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
+        UbuntuGit(run=self._run).install_apt(system, packages)
 
     def verify(self, system: System) -> bool:
         """Verify that Git is available."""
@@ -83,7 +104,11 @@ class FedoraGit(FedoraComponentImplementation):
         """Initialize the Fedora Git implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Git on Fedora."""
         self._run(
             prepare_command(
@@ -108,7 +133,11 @@ class ArchGit(ArchComponentImplementation):
         """Initialize the Arch Linux Git implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Git on Arch Linux."""
         self._run(
             prepare_command(

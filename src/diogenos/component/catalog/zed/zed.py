@@ -3,6 +3,7 @@
 import subprocess
 from pathlib import Path
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import ArchComponentImplementation
@@ -12,6 +13,7 @@ from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.dependency import Dependency
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
@@ -29,7 +31,11 @@ class ZedImplementation:
         """Initialize the Zed implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Zed using its official Linux installer."""
         installer = self._run(
             ["curl", "-fL", "https://zed.dev/install.sh"],

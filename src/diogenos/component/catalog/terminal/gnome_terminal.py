@@ -2,6 +2,7 @@
 
 import subprocess
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import ArchComponentImplementation
@@ -11,12 +12,16 @@ from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import APTInstallMixin
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
-class UbuntuGnomeTerminal(UbuntuComponentImplementation):
+class UbuntuGnomeTerminal(UbuntuComponentImplementation, APTInstallMixin):
     """Define the Ubuntu implementation of GNOME Terminal."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -25,15 +30,27 @@ class UbuntuGnomeTerminal(UbuntuComponentImplementation):
         """Initialize the Ubuntu GNOME Terminal implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install GNOME Terminal on Ubuntu."""
         self._run(
             prepare_command(["apt-get", "update"], privileged=True),
             check=True,
         )
+        self.install_packages(system, ("gnome-terminal",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
         self._run(
             prepare_command(
-                ["apt-get", "install", "-y", "gnome-terminal"],
+                ["apt-get", "install", "-y", *packages],
                 privileged=True,
             ),
             check=True,
@@ -44,8 +61,10 @@ class UbuntuGnomeTerminal(UbuntuComponentImplementation):
         return validate_command(self._run, ["gnome-terminal", "--version"])
 
 
-class DebianGnomeTerminal(DebianComponentImplementation):
+class DebianGnomeTerminal(DebianComponentImplementation, APTInstallMixin):
     """Define the Debian implementation of GNOME Terminal."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -54,9 +73,21 @@ class DebianGnomeTerminal(DebianComponentImplementation):
         """Initialize the Debian GNOME Terminal implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install GNOME Terminal on Debian."""
-        UbuntuGnomeTerminal(run=self._run).install(system)
+        self.install_packages(system, ("gnome-terminal",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
+        UbuntuGnomeTerminal(run=self._run).install_apt(system, packages)
 
     def verify(self, system: System) -> bool:
         """Verify that GNOME Terminal is available."""
@@ -73,7 +104,11 @@ class FedoraGnomeTerminal(FedoraComponentImplementation):
         """Initialize the Fedora GNOME Terminal implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install GNOME Terminal on Fedora."""
         self._run(
             prepare_command(
@@ -98,7 +133,11 @@ class ArchGnomeTerminal(ArchComponentImplementation):
         """Initialize the Arch GNOME Terminal implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install GNOME Terminal on Arch."""
         self._run(
             prepare_command(

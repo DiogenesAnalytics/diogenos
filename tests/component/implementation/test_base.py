@@ -1,19 +1,15 @@
 """Test the component implementation abstraction."""
 
+from typing import Optional
 from typing import Tuple
 
 import pytest
 
 from diogenos.component import ComponentImplementation
-from diogenos.component.implementation.command import Command
-from diogenos.component.implementation.method.base import Method
-from diogenos.component.implementation.method.operations import Operation
-from diogenos.component.implementation.method.options import MethodOptions
-from diogenos.component.implementation.method.types import MethodType
+from diogenos.component.implementation.method import APTInstallMixin
+from diogenos.component.implementation.method import InstallMethodType
+from diogenos.component.implementation.method import SnapInstallMixin
 from diogenos.system.base import System
-from tests.component.support import (
-    ComponentImplementationStub as SharedImplementationStub,
-)
 
 
 class ComponentImplementationStub(ComponentImplementation):
@@ -28,11 +24,17 @@ class ComponentImplementationStub(ComponentImplementation):
         """Initialize the component implementation stub."""
         self.verified = verified
         self.install_called = False
+        self.install_method: Optional[InstallMethodType] = None
         self.verify_called = False
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Record that installation was called."""
         self.install_called = True
+        self.install_method = method
 
     def verify(self, system: System) -> bool:
         """Record that verification was called."""
@@ -40,67 +42,44 @@ class ComponentImplementationStub(ComponentImplementation):
         return self.verified
 
 
-class MethodOptionsStub(MethodOptions):
-    """Provide dummy installation method options."""
-
-
-class MethodStub(Method):
-    """Provide a dummy installation method."""
-
-    def build(
-        self,
-        operation: Operation,
-        arguments: Tuple[str, ...] = (),
-    ) -> Command:
-        """Build a test installation command."""
-        return Command.from_arguments(arguments)
-
-
-class AlternateMethodStub(Method):
-    """Provide an alternate dummy installation method."""
-
-    def build(
-        self,
-        operation: Operation,
-        arguments: Tuple[str, ...] = (),
-    ) -> Command:
-        """Build an alternate test installation command."""
-        return Command.from_arguments(arguments)
-
-
-class APTImplementationStub(SharedImplementationStub):
-    """Provide an implementation with APT support."""
-
-    DEFAULT_METHOD = MethodType.APT
-
-    METHODS = {
-        MethodType.APT: (
-            MethodStub,
-            MethodOptionsStub(),
-        ),
-    }
-
-
-class SnapImplementationStub(SharedImplementationStub):
-    """Provide an implementation with Snap support."""
-
-    DEFAULT_METHOD = MethodType.SNAP
-
-    METHODS = {
-        MethodType.SNAP: (
-            AlternateMethodStub,
-            MethodOptionsStub(),
-        ),
-    }
-
-
-class CombinedImplementationStub(
-    APTImplementationStub,
-    SnapImplementationStub,
+class PackageComponentImplementationStub(
+    ComponentImplementationStub,
+    APTInstallMixin,
+    SnapInstallMixin,
 ):
-    """Provide an implementation with APT and Snap support."""
+    """Provide package installation methods for testing."""
 
-    DEFAULT_METHOD = MethodType.APT
+    def __init__(self) -> None:
+        """Initialize the package component implementation stub."""
+        super().__init__()
+        self.installed_packages: Tuple[str, ...] = ()
+        self.installed_method: Optional[InstallMethodType] = None
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Record APT package installation."""
+        self.installed_packages = packages
+        self.installed_method = InstallMethodType.APT
+
+    def install_snap(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Record Snap package installation."""
+        self.installed_packages = packages
+        self.installed_method = InstallMethodType.SNAP
+
+
+class DefaultPackageComponentImplementationStub(
+    PackageComponentImplementationStub,
+):
+    """Provide a default package installation method."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.SNAP
 
 
 @pytest.mark.component
@@ -142,15 +121,110 @@ def test_implementation_does_not_support_system(
 
 
 @pytest.mark.component
-def test_implementation_install(
+def test_implementation_install_without_method(
     system: System,
 ) -> None:
-    """Test that installation is called."""
+    """Test that installation can be called without an explicit method."""
     implementation = ComponentImplementationStub()
 
     implementation.install(system)
 
     assert implementation.install_called is True
+    assert implementation.install_method is None
+
+
+@pytest.mark.component
+def test_implementation_install_with_method(
+    system: System,
+) -> None:
+    """Test that an explicit installation method is passed through."""
+    implementation = ComponentImplementationStub()
+
+    implementation.install(system, InstallMethodType.SNAP)
+
+    assert implementation.install_called is True
+    assert implementation.install_method == InstallMethodType.SNAP
+
+
+@pytest.mark.component
+def test_implementation_install_methods() -> None:
+    """Test that available installation methods are discovered."""
+    implementation = PackageComponentImplementationStub()
+
+    assert implementation.install_methods == (
+        InstallMethodType.APT,
+        InstallMethodType.SNAP,
+    )
+
+
+@pytest.mark.component
+@pytest.mark.parametrize(
+    "method",
+    (
+        InstallMethodType.APT,
+        InstallMethodType.SNAP,
+    ),
+)
+def test_implementation_install_packages_with_method(
+    system: System,
+    method: InstallMethodType,
+) -> None:
+    """Test that packages are installed using the selected method."""
+    implementation = PackageComponentImplementationStub()
+    packages = ("firefox",)
+
+    implementation.install_packages(system, packages, method)
+
+    assert implementation.installed_method == method
+    assert implementation.installed_packages == packages
+
+
+@pytest.mark.component
+def test_implementation_install_packages_with_default_method(
+    system: System,
+) -> None:
+    """Test that the default installation method is used."""
+    implementation = DefaultPackageComponentImplementationStub()
+    packages = ("firefox",)
+
+    implementation.install_packages(system, packages)
+
+    assert implementation.installed_method == InstallMethodType.SNAP
+    assert implementation.installed_packages == packages
+
+
+@pytest.mark.component
+def test_implementation_install_packages_without_method(
+    system: System,
+) -> None:
+    """Test that package installation requires a method."""
+    implementation = PackageComponentImplementationStub()
+
+    with pytest.raises(ValueError, match="No installation method specified"):
+        implementation.install_packages(system, ("firefox",))
+
+
+@pytest.mark.component
+def test_implementation_install_packages_with_unsupported_method(
+    system: System,
+) -> None:
+    """Test that unsupported installation methods are rejected."""
+    implementation = PackageComponentImplementationStub()
+
+    with pytest.raises(ValueError, match="Unsupported installation method"):
+        implementation.install_packages(
+            system,
+            ("firefox",),
+            InstallMethodType.DOCKER,
+        )
+
+
+@pytest.mark.component
+def test_implementation_without_install_methods() -> None:
+    """Test that components can exist without package installation methods."""
+    implementation = ComponentImplementationStub()
+
+    assert implementation.install_methods == ()
 
 
 @pytest.mark.component
@@ -165,142 +239,11 @@ def test_implementation_verify(
 
 
 @pytest.mark.component
-def test_implementation_composes_methods() -> None:
-    """Test that methods are composed from parent implementations."""
-    assert set(CombinedImplementationStub.METHODS) == {
-        MethodType.APT,
-        MethodType.SNAP,
-    }
+def test_implementation_verify_returns_false(
+    system: System,
+) -> None:
+    """Test that verification can report an unsuccessful installation."""
+    implementation = ComponentImplementationStub(verified=False)
 
-
-@pytest.mark.component
-def test_implementation_rejects_duplicate_methods() -> None:
-    """Test that duplicate inherited methods are rejected."""
-
-    class DuplicateAPTImplementationStub(SharedImplementationStub):
-        """Provide another implementation with APT support."""
-
-        METHODS = {
-            MethodType.APT: (
-                AlternateMethodStub,
-                MethodOptionsStub(),
-            ),
-        }
-
-    with pytest.raises(TypeError, match="duplicate installation method apt"):
-
-        class InvalidImplementation(
-            APTImplementationStub,
-            DuplicateAPTImplementationStub,
-        ):
-            """Provide an invalid implementation."""
-
-
-@pytest.mark.component
-def test_implementation_overrides_inherited_method() -> None:
-    """Test that a subclass can override an inherited method."""
-
-    class OverriddenImplementation(APTImplementationStub):
-        """Provide an implementation with an overridden method."""
-
-        METHODS = {
-            MethodType.APT: (
-                AlternateMethodStub,
-                MethodOptionsStub(),
-            ),
-        }
-
-    assert OverriddenImplementation.METHODS[MethodType.APT][0] is AlternateMethodStub
-
-
-@pytest.mark.component
-def test_implementation_resolves_default_method() -> None:
-    """Test that the declared default method is selected."""
-    implementation = APTImplementationStub()
-
-    assert isinstance(implementation.resolve_method(), MethodStub)
-
-
-@pytest.mark.component
-def test_implementation_resolves_explicit_method() -> None:
-    """Test that an explicitly requested method is selected."""
-    implementation = CombinedImplementationStub()
-
-    assert isinstance(
-        implementation.resolve_method(MethodType.SNAP),
-        AlternateMethodStub,
-    )
-
-
-@pytest.mark.component
-def test_implementation_rejects_missing_default() -> None:
-    """Test that registered methods require a default."""
-
-    class MissingDefaultImplementation(SharedImplementationStub):
-        """Provide an implementation without a default method."""
-
-        METHODS = {
-            MethodType.APT: (
-                MethodStub,
-                MethodOptionsStub(),
-            ),
-        }
-
-    implementation = MissingDefaultImplementation()
-
-    with pytest.raises(
-        ValueError,
-        match="no default installation method configured",
-    ):
-        implementation.resolve_method()
-
-
-@pytest.mark.component
-def test_implementation_rejects_unsupported_default() -> None:
-    """Test that an unsupported default raises an error."""
-
-    class InvalidDefaultImplementation(SharedImplementationStub):
-        """Provide an implementation with an unsupported default."""
-
-        DEFAULT_METHOD = MethodType.SNAP
-
-        METHODS = {
-            MethodType.APT: (
-                MethodStub,
-                MethodOptionsStub(),
-            ),
-        }
-
-    implementation = InvalidDefaultImplementation()
-
-    with pytest.raises(
-        ValueError,
-        match="unsupported installation method: snap",
-    ):
-        implementation.resolve_method()
-
-
-@pytest.mark.component
-def test_implementation_rejects_unsupported_method() -> None:
-    """Test that an unsupported method raises an error."""
-    implementation = SharedImplementationStub()
-
-    with pytest.raises(ValueError, match="unsupported installation method: snap"):
-        implementation.resolve_method(MethodType.SNAP)
-
-
-@pytest.mark.component
-def test_implementation_resolves_no_method() -> None:
-    """Test that an implementation without methods resolves to None."""
-    implementation = SharedImplementationStub()
-
-    assert implementation.resolve_method() is None
-
-
-@pytest.mark.component
-def test_implementation_rejects_method_when_none_registered() -> None:
-    """Test that an explicit method is rejected when none are registered."""
-    implementation = SharedImplementationStub()
-
-    with pytest.raises(ValueError, match="unsupported installation method: apt"):
-        implementation.resolve_method(MethodType.APT)
+    assert implementation.verify(system) is False
+    assert implementation.verify_called is True

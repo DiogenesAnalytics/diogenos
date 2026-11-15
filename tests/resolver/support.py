@@ -6,6 +6,7 @@ from typing import Tuple
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component.dependency import Dependency
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.system.base import System
 
 
@@ -20,7 +21,11 @@ class ComponentImplementationStub(ComponentImplementation):
         """Determine whether the implementation supports the system."""
         return self.supported
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Provide a test implementation of installation."""
 
     def verify(self, system: System) -> bool:

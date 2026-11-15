@@ -2,6 +2,7 @@
 
 import subprocess
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import ArchComponentImplementation
@@ -11,12 +12,16 @@ from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import APTInstallMixin
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
-class UbuntuCurl(UbuntuComponentImplementation):
+class UbuntuCurl(UbuntuComponentImplementation, APTInstallMixin):
     """Define the Ubuntu implementation of Curl."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -25,15 +30,27 @@ class UbuntuCurl(UbuntuComponentImplementation):
         """Initialize the Ubuntu Curl implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Curl on Ubuntu."""
+        self.install_packages(system, ("curl",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
         self._run(
             prepare_command(["apt-get", "update"], privileged=True),
             check=True,
         )
         self._run(
             prepare_command(
-                ["apt-get", "install", "-y", "curl"],
+                ["apt-get", "install", "-y", *packages],
                 privileged=True,
             ),
             check=True,
@@ -44,8 +61,10 @@ class UbuntuCurl(UbuntuComponentImplementation):
         return validate_command(self._run, ["curl", "--version"])
 
 
-class DebianCurl(DebianComponentImplementation):
+class DebianCurl(DebianComponentImplementation, APTInstallMixin):
     """Define the Debian implementation of Curl."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -54,13 +73,25 @@ class DebianCurl(DebianComponentImplementation):
         """Initialize the Debian Curl implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Curl on Debian."""
-        UbuntuCurl(run=self._run).install(system)
+        self.install_packages(system, ("curl",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
+        UbuntuCurl(run=self._run).install_apt(system, packages)
 
     def verify(self, system: System) -> bool:
         """Verify that Curl is available."""
-        return UbuntuCurl(run=self._run).verify(system)
+        return validate_command(self._run, ["curl", "--version"])
 
 
 class FedoraCurl(FedoraComponentImplementation):
@@ -73,7 +104,11 @@ class FedoraCurl(FedoraComponentImplementation):
         """Initialize the Fedora Curl implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Curl on Fedora."""
         self._run(
             prepare_command(
@@ -98,7 +133,11 @@ class ArchCurl(ArchComponentImplementation):
         """Initialize the Arch Linux Curl implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Curl on Arch Linux."""
         self._run(
             prepare_command(

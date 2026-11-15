@@ -4,12 +4,14 @@ import getpass
 import os
 import subprocess
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.system.base import System
 
 
@@ -55,7 +57,11 @@ class UbuntuDockerUserConfig(UbuntuComponentImplementation):
         self._run = run
         self._user = user or _get_invoking_user()
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Configure the invoking user for Docker access."""
         if (
             self._run(

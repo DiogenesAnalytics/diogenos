@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import ArchComponentImplementation
@@ -16,6 +17,7 @@ from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.system.base import System
 
 
@@ -39,7 +41,11 @@ class FirefoxDarkReaderImplementation:
         """Initialize the Firefox Dark Reader implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Configure Firefox to install Dark Reader."""
         self._run(
             prepare_command(

@@ -2,6 +2,7 @@
 
 import subprocess
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import ArchComponentImplementation
@@ -12,12 +13,16 @@ from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.dependency import Dependency
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import APTInstallMixin
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
-class UbuntuGnuPG(UbuntuComponentImplementation):
+class UbuntuGnuPG(UbuntuComponentImplementation, APTInstallMixin):
     """Define the Ubuntu implementation of GnuPG."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -26,15 +31,27 @@ class UbuntuGnuPG(UbuntuComponentImplementation):
         """Initialize the Ubuntu GnuPG implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install GnuPG on Ubuntu."""
+        self.install_packages(system, ("gnupg",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
         self._run(
             prepare_command(["apt-get", "update"], privileged=True),
             check=True,
         )
         self._run(
             prepare_command(
-                ["apt-get", "install", "-y", "gnupg"],
+                ["apt-get", "install", "-y", *packages],
                 privileged=True,
             ),
             check=True,
@@ -45,8 +62,10 @@ class UbuntuGnuPG(UbuntuComponentImplementation):
         return validate_command(self._run, ["gpg", "--version"])
 
 
-class DebianGnuPG(DebianComponentImplementation):
+class DebianGnuPG(DebianComponentImplementation, APTInstallMixin):
     """Define the Debian implementation of GnuPG."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -55,19 +74,21 @@ class DebianGnuPG(DebianComponentImplementation):
         """Initialize the Debian GnuPG implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install GnuPG on Debian."""
-        self._run(
-            prepare_command(["apt-get", "update"], privileged=True),
-            check=True,
-        )
-        self._run(
-            prepare_command(
-                ["apt-get", "install", "-y", "gnupg"],
-                privileged=True,
-            ),
-            check=True,
-        )
+        self.install_packages(system, ("gnupg",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
+        UbuntuGnuPG(run=self._run).install_apt(system, packages)
 
     def verify(self, system: System) -> bool:
         """Verify that GnuPG is available."""
@@ -84,7 +105,11 @@ class FedoraGnuPG(FedoraComponentImplementation):
         """Initialize the Fedora GnuPG implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install GnuPG on Fedora."""
         self._run(
             prepare_command(
@@ -109,7 +134,11 @@ class ArchGnuPG(ArchComponentImplementation):
         """Initialize the Arch Linux GnuPG implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install GnuPG on Arch Linux."""
         self._run(
             prepare_command(

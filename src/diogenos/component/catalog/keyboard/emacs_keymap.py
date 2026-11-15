@@ -2,6 +2,7 @@
 
 import subprocess
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import Component
@@ -9,6 +10,7 @@ from diogenos.component import ComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.dependency import Dependency
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
@@ -42,7 +44,11 @@ class UbuntuEmacsKeymap(UbuntuComponentImplementation):
         """Initialize the Ubuntu Emacs keymap implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install and activate the Emacs keymap on Ubuntu."""
         self._run(
             prepare_command(["tee", KEYMAP_PATH], privileged=True),

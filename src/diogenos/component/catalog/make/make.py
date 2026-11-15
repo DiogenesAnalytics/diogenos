@@ -2,6 +2,7 @@
 
 import subprocess
 from typing import Callable
+from typing import Optional
 from typing import Tuple
 
 from diogenos.component import ArchComponentImplementation
@@ -11,12 +12,16 @@ from diogenos.component import DebianComponentImplementation
 from diogenos.component import FedoraComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
 from diogenos.component.implementation.execution import prepare_command
+from diogenos.component.implementation.method import APTInstallMixin
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
-class UbuntuMake(UbuntuComponentImplementation):
+class UbuntuMake(UbuntuComponentImplementation, APTInstallMixin):
     """Define the Ubuntu implementation of Make."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -25,15 +30,27 @@ class UbuntuMake(UbuntuComponentImplementation):
         """Initialize the Ubuntu Make implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
-        """Install Make on Ubuntu."""
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
+        """Install Make."""
+        self.install_packages(system, ("make",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
         self._run(
             prepare_command(["apt-get", "update"], privileged=True),
             check=True,
         )
         self._run(
             prepare_command(
-                ["apt-get", "install", "-y", "make"],
+                ["apt-get", "install", "-y", *packages],
                 privileged=True,
             ),
             check=True,
@@ -44,8 +61,10 @@ class UbuntuMake(UbuntuComponentImplementation):
         return validate_command(self._run, ["make", "--version"])
 
 
-class DebianMake(DebianComponentImplementation):
+class DebianMake(DebianComponentImplementation, APTInstallMixin):
     """Define the Debian implementation of Make."""
+
+    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -54,9 +73,21 @@ class DebianMake(DebianComponentImplementation):
         """Initialize the Debian Make implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Make on Debian."""
-        UbuntuMake(run=self._run).install(system)
+        self.install_packages(system, ("make",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install packages using APT."""
+        UbuntuMake(run=self._run).install_apt(system, packages)
 
     def verify(self, system: System) -> bool:
         """Verify that Make is available."""
@@ -73,7 +104,11 @@ class FedoraMake(FedoraComponentImplementation):
         """Initialize the Fedora Make implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Make on Fedora."""
         self._run(
             prepare_command(
@@ -98,7 +133,11 @@ class ArchMake(ArchComponentImplementation):
         """Initialize the Arch Linux Make implementation."""
         self._run = run
 
-    def install(self, system: System) -> None:
+    def install(
+        self,
+        system: System,
+        method: Optional[InstallMethodType] = None,
+    ) -> None:
         """Install Make on Arch Linux."""
         self._run(
             prepare_command(
