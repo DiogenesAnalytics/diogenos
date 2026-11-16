@@ -30,6 +30,7 @@ def _is_firefox_satisfied(
 
 class UbuntuFirefox(
     UbuntuComponentImplementation,
+    APTInstallMixin,
     SnapInstallMixin,
 ):
     """Define the Ubuntu implementation of Firefox."""
@@ -50,6 +51,24 @@ class UbuntuFirefox(
     ) -> None:
         """Install Firefox on Ubuntu."""
         self.install_packages(system, ("firefox",), method)
+
+    def install_apt(
+        self,
+        system: System,
+        packages: Tuple[str, ...],
+    ) -> None:
+        """Install Firefox using APT."""
+        self._run(
+            prepare_command(["apt-get", "update"], privileged=True),
+            check=True,
+        )
+        self._run(
+            prepare_command(
+                ["apt-get", "install", "-y", *packages],
+                privileged=True,
+            ),
+            check=True,
+        )
 
     def install_snap(
         self,

@@ -10,6 +10,7 @@ from diogenos.component.catalog.browser.firefox.firefox import DebianFirefox
 from diogenos.component.catalog.browser.firefox.firefox import FedoraFirefox
 from diogenos.component.catalog.browser.firefox.firefox import FirefoxPackage
 from diogenos.component.catalog.browser.firefox.firefox import UbuntuFirefox
+from diogenos.component.implementation.method import InstallMethodType
 from diogenos.system.base import System
 from tests.component.support import RunStub
 
@@ -140,6 +141,71 @@ def test_ubuntu_firefox_installs_firefox_with_sudo(
             {"check": True},
         ),
     ]
+
+
+@pytest.mark.component
+def test_ubuntu_firefox_installs_firefox_with_apt(
+    system: System,
+    run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Verify that Ubuntu Firefox can be installed using APT."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
+    implementation = UbuntuFirefox(run=run_stub)
+
+    implementation.install(system, InstallMethodType.APT)
+
+    assert run_stub.calls == [
+        (
+            ["apt-get", "update"],
+            {"check": True},
+        ),
+        (
+            ["apt-get", "install", "-y", "firefox"],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+def test_ubuntu_firefox_installs_firefox_with_apt_and_sudo(
+    system: System,
+    run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Verify that Ubuntu Firefox uses sudo for APT when not running as root."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+    implementation = UbuntuFirefox(run=run_stub)
+
+    implementation.install(system, InstallMethodType.APT)
+
+    assert run_stub.calls == [
+        (
+            ["sudo", "apt-get", "update"],
+            {"check": True},
+        ),
+        (
+            ["sudo", "apt-get", "install", "-y", "firefox"],
+            {"check": True},
+        ),
+    ]
+
+
+@pytest.mark.component
+def test_ubuntu_firefox_supports_apt_and_snap() -> None:
+    """Verify that Ubuntu Firefox supports both installation methods."""
+    implementation = UbuntuFirefox()
+
+    assert implementation.install_methods == (
+        InstallMethodType.APT,
+        InstallMethodType.SNAP,
+    )
+
+
+@pytest.mark.component
+def test_ubuntu_firefox_defaults_to_snap() -> None:
+    """Verify that Ubuntu Firefox defaults to Snap."""
+    assert UbuntuFirefox.DEFAULT_INSTALL_METHOD == InstallMethodType.SNAP
 
 
 @pytest.mark.component
