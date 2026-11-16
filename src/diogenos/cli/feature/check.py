@@ -1,6 +1,7 @@
 """Define the feature check command."""
 
 from typing import Callable
+from typing import List
 from typing import Tuple
 from typing import cast
 
@@ -36,6 +37,7 @@ def check_feature(
         registry_ids = registry.list()
 
     system = SystemDetector().detect()
+    results: List[Tuple[str, str]] = []
     all_satisfied = True
 
     for registry_id in registry_ids:
@@ -53,10 +55,27 @@ def check_feature(
         selected_feature = feature_factory()
 
         if selected_feature.is_satisfied(system):
-            click.echo(f"Feature {registry_id!r} is satisfied.")
+            status = "Satisfied"
         else:
-            click.echo(f"Feature {registry_id!r} is not satisfied.")
+            status = "Not satisfied"
             all_satisfied = False
+
+        results.append((registry_id, status))
+
+    feature_width = max(
+        len("Feature"),
+        max((len(registry_id) for registry_id, _ in results), default=0),
+    )
+    status_width = max(
+        len("Status"),
+        max((len(status) for _, status in results), default=0),
+    )
+
+    click.echo(f"{'Feature':<{feature_width}}  Status")
+    click.echo(f"{'-' * feature_width}  {'-' * status_width}")
+
+    for registry_id, status in results:
+        click.echo(f"{registry_id:<{feature_width}}  {status}")
 
     if not all_satisfied:
         raise click.exceptions.Exit(1)

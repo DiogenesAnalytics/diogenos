@@ -23,7 +23,9 @@ def test_feature_check_satisfied(
     result = CliRunner().invoke(main, ["feature", "check", "pulsar"])
 
     assert result.exit_code == 0
-    assert result.output == "Feature 'pulsar' is satisfied.\n"
+    assert result.output == (
+        "Feature  Status\n" "-------  ---------\n" "pulsar   Satisfied\n"
+    )
     registry.get.assert_called_once_with("pulsar")
     detector.detect.assert_called_once_with()
     selected_feature.is_satisfied.assert_called_once_with(system)
@@ -43,7 +45,9 @@ def test_feature_check_unsatisfied(
     result = CliRunner().invoke(main, ["feature", "check", "pulsar"])
 
     assert result.exit_code == 1
-    assert result.output == "Feature 'pulsar' is not satisfied.\n"
+    assert result.output == (
+        "Feature  Status\n" "-------  -------------\n" "pulsar   Not satisfied\n"
+    )
     selected_feature.is_satisfied.assert_called_once_with(system)
 
 
@@ -58,7 +62,11 @@ def test_feature_check_unknown_feature(
     result = CliRunner().invoke(main, ["feature", "check", "missing"])
 
     assert result.exit_code == 1
-    assert result.output == "Error: missing is not a registered feature.\n"
+    assert result.output == (
+        "Error: missing is not a registered feature.\n"
+        "Feature  Status\n"
+        "-------  ------\n"
+    )
     registry.get.assert_called_once_with("missing")
 
 
@@ -94,7 +102,10 @@ def test_feature_check_all(
 
     assert result.exit_code == 0
     assert result.output == (
-        "Feature 'pulsar' is satisfied.\n" "Feature 'tmux' is satisfied.\n"
+        "Feature  Status\n"
+        "-------  ---------\n"
+        "pulsar   Satisfied\n"
+        "tmux     Satisfied\n"
     )
     registry.list.assert_called_once_with()
     registry.get.assert_any_call("pulsar")
@@ -128,7 +139,10 @@ def test_feature_check_multiple_features(
 
     assert result.exit_code == 0
     assert result.output == (
-        "Feature 'pulsar' is satisfied.\n" "Feature 'tmux' is satisfied.\n"
+        "Feature  Status\n"
+        "-------  ---------\n"
+        "pulsar   Satisfied\n"
+        "tmux     Satisfied\n"
     )
     registry.get.assert_any_call("pulsar")
     registry.get.assert_any_call("tmux")
@@ -171,7 +185,9 @@ def test_feature_check_unknown_feature_continues(
     assert result.exit_code == 1
     assert result.output == (
         "Error: missing is not a registered feature.\n"
-        "Feature 'pulsar' is satisfied.\n"
+        "Feature  Status\n"
+        "-------  ---------\n"
+        "pulsar   Satisfied\n"
     )
     assert registry.get.call_count == 2
     selected_feature.is_satisfied.assert_called_once_with(system)
