@@ -59,10 +59,12 @@ class RunStub:
         self,
         returncode: int = 0,
         stdout: str = "",
+        outputs: Optional[List[str]] = None,
     ) -> None:
-        """Initialize the stub with a command return code and output."""
+        """Initialize the stub with command results."""
         self.returncode = returncode
         self.stdout = stdout
+        self.outputs = outputs or []
         self.calls: List[Tuple[List[str], Dict[str, Any]]] = []
 
     def __call__(
@@ -73,10 +75,12 @@ class RunStub:
         """Record a command and return a simulated result."""
         self.calls.append((command, kwargs))
 
+        stdout = self.outputs.pop(0) if self.outputs else self.stdout
+
         result = subprocess.CompletedProcess(
             args=command,
             returncode=self.returncode,
-            stdout=self.stdout,
+            stdout=stdout,
             stderr="",
         )
 

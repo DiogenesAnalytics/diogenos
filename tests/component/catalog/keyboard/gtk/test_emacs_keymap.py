@@ -4,11 +4,11 @@ import subprocess
 
 import pytest
 
-from diogenos.component.catalog.keyboard.gtk import GTK_KEY_THEME
-from diogenos.component.catalog.keyboard.gtk import GTK_KEY_THEME_VALUE
-from diogenos.component.catalog.keyboard.gtk import GTK_SCHEMA
-from diogenos.component.catalog.keyboard.gtk import GtkEmacsKeymap
-from diogenos.component.catalog.keyboard.gtk import UbuntuGtkEmacsKeymap
+from diogenos.component.catalog.keyboard.gtk.emacs_keymap import GTK_KEY_THEME
+from diogenos.component.catalog.keyboard.gtk.emacs_keymap import GTK_KEY_THEME_VALUE
+from diogenos.component.catalog.keyboard.gtk.emacs_keymap import GTK_SCHEMA
+from diogenos.component.catalog.keyboard.gtk.emacs_keymap import GtkEmacsKeymap
+from diogenos.component.catalog.keyboard.gtk.emacs_keymap import UbuntuGtkEmacsKeymap
 from diogenos.system.base import System
 from tests.component.support import RunStub
 
