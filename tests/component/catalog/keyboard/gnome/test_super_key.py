@@ -4,9 +4,7 @@ import subprocess
 
 import pytest
 
-from diogenos.component.catalog.keyboard.gnome.super_key import MUTTER_SCHEMA
-from diogenos.component.catalog.keyboard.gnome.super_key import OVERLAY_KEY
-from diogenos.component.catalog.keyboard.gnome.super_key import OVERLAY_KEY_VALUE
+from diogenos.component.catalog.keyboard.gnome.super_key import SUPER_KEY_SETTINGS
 from diogenos.component.catalog.keyboard.gnome.super_key import GnomeSuperKey
 from diogenos.component.catalog.keyboard.gnome.super_key import UbuntuGnomeSuperKey
 from diogenos.system.base import System
@@ -14,10 +12,13 @@ from tests.component.support import RunStub
 
 
 @pytest.fixture
-def gnome_super_key_run_stub(run_stub: RunStub) -> RunStub:
-    """Create a subprocess stub that reports the standalone Super key as disabled."""
-    run_stub.stdout = "''\n"
-    return run_stub
+def gnome_super_key_run_stub() -> RunStub:
+    """Create a subprocess stub that reports the GNOME Super key configuration."""
+    return RunStub(
+        outputs=[
+            (value if value else "''") + "\n" for _, _, value in SUPER_KEY_SETTINGS
+        ],
+    )
 
 
 @pytest.mark.component
@@ -31,32 +32,33 @@ def test_gnome_super_key_is_satisfied(
     system: System,
     gnome_super_key_run_stub: RunStub,
 ) -> None:
-    """Test that the GNOME Super key is satisfied when disabled."""
+    """Test that the GNOME Super key configuration is satisfied."""
     component = GnomeSuperKey(run=gnome_super_key_run_stub)
 
     assert component.is_satisfied(system) is True
     assert gnome_super_key_run_stub.calls == [
         (
-            ["gsettings", "get", MUTTER_SCHEMA, OVERLAY_KEY],
+            ["gsettings", "get", schema, key],
             {
                 "capture_output": True,
                 "check": False,
                 "text": True,
             },
-        ),
+        )
+        for schema, key, _ in SUPER_KEY_SETTINGS
     ]
 
 
 @pytest.mark.component
 def test_gnome_super_key_is_not_satisfied(
     system: System,
-    gnome_super_key_run_stub: RunStub,
 ) -> None:
-    """Test that the GNOME Super key is not satisfied when enabled."""
-    gnome_super_key_run_stub.stdout = "'Super_L'\n"
-    component = GnomeSuperKey(run=gnome_super_key_run_stub)
+    """Test that the GNOME Super key configuration is not satisfied."""
+    run_stub = RunStub(outputs=["'Super_L'\n"])
+    component = GnomeSuperKey(run=run_stub)
 
     assert component.is_satisfied(system) is False
+    assert len(run_stub.calls) == 1
 
 
 @pytest.mark.component
@@ -78,22 +80,17 @@ def test_ubuntu_gnome_super_key_install(
     system: System,
     gnome_super_key_run_stub: RunStub,
 ) -> None:
-    """Test disabling the standalone Super key behavior on Ubuntu."""
+    """Test configuring the GNOME Super key behavior on Ubuntu."""
     implementation = UbuntuGnomeSuperKey(run=gnome_super_key_run_stub)
 
     implementation.install(system)
 
     assert gnome_super_key_run_stub.calls == [
         (
-            [
-                "gsettings",
-                "set",
-                MUTTER_SCHEMA,
-                OVERLAY_KEY,
-                OVERLAY_KEY_VALUE,
-            ],
+            ["gsettings", "set", schema, key, value],
             {"check": True},
-        ),
+        )
+        for schema, key, value in SUPER_KEY_SETTINGS
     ]
 
 
@@ -108,24 +105,24 @@ def test_ubuntu_gnome_super_key_verify(
     assert implementation.verify(system) is True
     assert gnome_super_key_run_stub.calls == [
         (
-            ["gsettings", "get", MUTTER_SCHEMA, OVERLAY_KEY],
+            ["gsettings", "get", schema, key],
             {
                 "capture_output": True,
                 "check": False,
                 "text": True,
             },
-        ),
+        )
+        for schema, key, _ in SUPER_KEY_SETTINGS
     ]
 
 
 @pytest.mark.component
 def test_ubuntu_gnome_super_key_verify_failure(
     system: System,
-    gnome_super_key_run_stub: RunStub,
 ) -> None:
     """Test failed verification of the GNOME Super key configuration."""
-    gnome_super_key_run_stub.returncode = 1
-    implementation = UbuntuGnomeSuperKey(run=gnome_super_key_run_stub)
+    run_stub = RunStub(returncode=1)
+    implementation = UbuntuGnomeSuperKey(run=run_stub)
 
     assert implementation.verify(system) is False
 
@@ -133,11 +130,12 @@ def test_ubuntu_gnome_super_key_verify_failure(
 @pytest.mark.component
 def test_ubuntu_gnome_super_key_install_failure(
     system: System,
-    gnome_super_key_run_stub: RunStub,
 ) -> None:
-    """Test that a failed GNOME Super key installation raises an error."""
-    gnome_super_key_run_stub.returncode = 1
-    implementation = UbuntuGnomeSuperKey(run=gnome_super_key_run_stub)
+    """Test that failed GNOME Super key installation raises an error."""
+    run_stub = RunStub(returncode=1)
+    implementation = UbuntuGnomeSuperKey(run=run_stub)
 
     with pytest.raises(subprocess.CalledProcessError):
         implementation.install(system)
+
+    assert len(run_stub.calls) == 1

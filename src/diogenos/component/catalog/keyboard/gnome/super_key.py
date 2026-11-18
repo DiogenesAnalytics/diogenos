@@ -13,22 +13,94 @@ from diogenos.system.base import System
 
 
 MUTTER_SCHEMA = "org.gnome.mutter"
+SHELL_SCHEMA = "org.gnome.shell.keybindings"
+WINDOW_MANAGER_SCHEMA = "org.gnome.desktop.wm.keybindings"
+
 OVERLAY_KEY = "overlay-key"
 OVERLAY_KEY_VALUE = ""
+
+EMPTY_KEYBINDING_VALUE = "@as []"
+
+SUPER_KEY_SETTINGS = (
+    (
+        (MUTTER_SCHEMA, OVERLAY_KEY, OVERLAY_KEY_VALUE),
+        (SHELL_SCHEMA, "focus-active-notification", EMPTY_KEYBINDING_VALUE),
+        (SHELL_SCHEMA, "toggle-application-view", EMPTY_KEYBINDING_VALUE),
+        (SHELL_SCHEMA, "toggle-message-tray", EMPTY_KEYBINDING_VALUE),
+        (SHELL_SCHEMA, "toggle-quick-settings", EMPTY_KEYBINDING_VALUE),
+        (WINDOW_MANAGER_SCHEMA, "maximize", EMPTY_KEYBINDING_VALUE),
+        (WINDOW_MANAGER_SCHEMA, "minimize", EMPTY_KEYBINDING_VALUE),
+        (WINDOW_MANAGER_SCHEMA, "unmaximize", "['<Alt>F5']"),
+        (WINDOW_MANAGER_SCHEMA, "move-to-monitor-down", EMPTY_KEYBINDING_VALUE),
+        (WINDOW_MANAGER_SCHEMA, "move-to-monitor-left", EMPTY_KEYBINDING_VALUE),
+        (WINDOW_MANAGER_SCHEMA, "move-to-monitor-right", EMPTY_KEYBINDING_VALUE),
+        (WINDOW_MANAGER_SCHEMA, "move-to-monitor-up", EMPTY_KEYBINDING_VALUE),
+        (WINDOW_MANAGER_SCHEMA, "move-to-workspace-1", EMPTY_KEYBINDING_VALUE),
+        (WINDOW_MANAGER_SCHEMA, "move-to-workspace-last", EMPTY_KEYBINDING_VALUE),
+        (
+            WINDOW_MANAGER_SCHEMA,
+            "move-to-workspace-left",
+            "['<Control><Shift><Alt>Left']",
+        ),
+        (
+            WINDOW_MANAGER_SCHEMA,
+            "move-to-workspace-right",
+            "['<Control><Shift><Alt>Right']",
+        ),
+        (WINDOW_MANAGER_SCHEMA, "switch-applications", "['<Alt>Tab']"),
+        (
+            WINDOW_MANAGER_SCHEMA,
+            "switch-applications-backward",
+            "['<Shift><Alt>Tab']",
+        ),
+        (WINDOW_MANAGER_SCHEMA, "switch-group", "['<Alt>Above_Tab']"),
+        (
+            WINDOW_MANAGER_SCHEMA,
+            "switch-group-backward",
+            "['<Shift><Alt>Above_Tab']",
+        ),
+        (WINDOW_MANAGER_SCHEMA, "switch-input-source", "['XF86Keyboard']"),
+        (
+            WINDOW_MANAGER_SCHEMA,
+            "switch-input-source-backward",
+            "['<Shift>XF86Keyboard']",
+        ),
+        (WINDOW_MANAGER_SCHEMA, "switch-to-workspace-1", EMPTY_KEYBINDING_VALUE),
+        (WINDOW_MANAGER_SCHEMA, "switch-to-workspace-last", EMPTY_KEYBINDING_VALUE),
+    )
+    + tuple(
+        (SHELL_SCHEMA, f"open-new-window-application-{number}", EMPTY_KEYBINDING_VALUE)
+        for number in range(1, 10)
+    )
+    + tuple(
+        (SHELL_SCHEMA, f"switch-to-application-{number}", EMPTY_KEYBINDING_VALUE)
+        for number in range(1, 10)
+    )
+)
 
 
 def _is_gnome_super_key_satisfied(
     run: Callable[..., subprocess.CompletedProcess[str]],
 ) -> bool:
-    """Determine whether the standalone Super key behavior is disabled."""
-    result = run(
-        ["gsettings", "get", MUTTER_SCHEMA, OVERLAY_KEY],
-        capture_output=True,
-        check=False,
-        text=True,
-    )
+    """Determine whether GNOME Super key behavior is configured."""
+    for schema, key, expected_value in SUPER_KEY_SETTINGS:
+        result = run(
+            ["gsettings", "get", schema, key],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
 
-    return result.returncode == 0 and result.stdout.strip() == f"{OVERLAY_KEY_VALUE!r}"
+        if result.returncode != 0:
+            return False
+
+        if schema == MUTTER_SCHEMA and key == OVERLAY_KEY:
+            expected_value = "''"
+
+        if result.stdout.strip() != expected_value:
+            return False
+
+    return True
 
 
 class UbuntuGnomeSuperKey(UbuntuComponentImplementation):
@@ -46,20 +118,15 @@ class UbuntuGnomeSuperKey(UbuntuComponentImplementation):
         system: System,
         method: Optional[InstallMethodType] = None,
     ) -> None:
-        """Disable the standalone Super key behavior on Ubuntu."""
-        self._run(
-            [
-                "gsettings",
-                "set",
-                MUTTER_SCHEMA,
-                OVERLAY_KEY,
-                OVERLAY_KEY_VALUE,
-            ],
-            check=True,
-        )
+        """Configure GNOME Super key behavior on Ubuntu."""
+        for schema, key, value in SUPER_KEY_SETTINGS:
+            self._run(
+                ["gsettings", "set", schema, key, value],
+                check=True,
+            )
 
     def verify(self, system: System) -> bool:
-        """Verify that the standalone Super key behavior is disabled."""
+        """Verify GNOME Super key configuration on Ubuntu."""
         return _is_gnome_super_key_satisfied(self._run)
 
 
@@ -76,7 +143,7 @@ class GnomeSuperKey(Component):
         self._run = run
 
     def is_satisfied(self, system: System) -> bool:
-        """Determine whether the standalone Super key behavior is disabled."""
+        """Determine whether GNOME Super key behavior is configured."""
         return _is_gnome_super_key_satisfied(self._run)
 
     def implementations(
