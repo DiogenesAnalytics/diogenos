@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from unittest.mock import Mock
+from unittest.mock import call
 
 import pytest
 from pytest import MonkeyPatch
@@ -75,7 +76,6 @@ def test_pulsar_package_is_satisfied(
     component = PulsarPackage(run=run)
 
     assert component.is_satisfied(system)
-
     run.assert_called_once_with(
         ["pulsar", "--version"],
         capture_output=True,
@@ -97,7 +97,6 @@ def test_pulsar_package_is_not_satisfied(
         stderr="not found",
     )
     component = PulsarPackage(run=run)
-
     assert not component.is_satisfied(system)
 
 
@@ -105,7 +104,6 @@ def test_pulsar_package_is_not_satisfied(
 def test_pulsar_package_implementations(run: Mock) -> None:
     """Test the implementations exposed by the Pulsar component."""
     implementations = PulsarPackage(run=run).implementations()
-
     assert len(implementations) == 2
     assert isinstance(implementations[0], UbuntuPulsar)
     assert isinstance(implementations[1], DebianPulsar)
@@ -136,7 +134,6 @@ def test_ubuntu_pulsar_install(
     system = Mock(
         hardware=Mock(architecture=architecture),
     )
-
     response = Mock()
     response.__enter__ = Mock(return_value=response)
     response.__exit__ = Mock(return_value=False)
@@ -144,7 +141,6 @@ def test_ubuntu_pulsar_install(
 
     urlopen = Mock(return_value=response)
     download = Mock()
-
     monkeypatch.setattr(
         "diogenos.component.catalog.pulsar.pulsar.urllib.request.urlopen",
         urlopen,
@@ -164,7 +160,6 @@ def test_ubuntu_pulsar_install(
         "diogenos.component.catalog.pulsar.pulsar.download_file",
         download,
     )
-
     component = UbuntuPulsar(run=run)
     component.install(system)
 
@@ -183,17 +178,22 @@ def test_ubuntu_pulsar_install(
         expected_url,
         tmp_path / "pulsar.deb",
     )
-
-    run.assert_called_once_with(
+    run.assert_has_calls(
         [
-            "apt-get",
-            "install",
-            "-y",
-            "libasound2t64",
-            str(tmp_path / "pulsar.deb"),
+            call(["apt-get", "update"], check=True),
+            call(
+                [
+                    "apt-get",
+                    "install",
+                    "-y",
+                    "libasound2t64",
+                    str(tmp_path / "pulsar.deb"),
+                ],
+                check=True,
+            ),
         ],
-        check=True,
     )
+    assert run.call_count == 2
 
 
 @pytest.mark.parametrize(
@@ -217,7 +217,6 @@ def test_ubuntu_pulsar_install_with_sudo(
     system = Mock(
         hardware=Mock(architecture=architecture),
     )
-
     response = Mock()
     response.__enter__ = Mock(return_value=response)
     response.__exit__ = Mock(return_value=False)
@@ -225,7 +224,6 @@ def test_ubuntu_pulsar_install_with_sudo(
 
     urlopen = Mock(return_value=response)
     download = Mock()
-
     monkeypatch.setattr(
         "diogenos.component.catalog.pulsar.pulsar.urllib.request.urlopen",
         urlopen,
@@ -245,7 +243,6 @@ def test_ubuntu_pulsar_install_with_sudo(
         "diogenos.component.catalog.pulsar.pulsar.download_file",
         download,
     )
-
     component = UbuntuPulsar(run=run)
     component.install(system)
 
@@ -259,18 +256,23 @@ def test_ubuntu_pulsar_install_with_sudo(
         expected_url,
         tmp_path / "pulsar.deb",
     )
-
-    run.assert_called_once_with(
+    run.assert_has_calls(
         [
-            "sudo",
-            "apt-get",
-            "install",
-            "-y",
-            "libasound2t64",
-            str(tmp_path / "pulsar.deb"),
+            call(["sudo", "apt-get", "update"], check=True),
+            call(
+                [
+                    "sudo",
+                    "apt-get",
+                    "install",
+                    "-y",
+                    "libasound2t64",
+                    str(tmp_path / "pulsar.deb"),
+                ],
+                check=True,
+            ),
         ],
-        check=True,
     )
+    assert run.call_count == 2
 
 
 @pytest.mark.component
@@ -285,7 +287,6 @@ def test_ubuntu_pulsar_install_download_failure(
     response.__enter__ = Mock(return_value=response)
     response.__exit__ = Mock(return_value=False)
     response.read.return_value = json.dumps(release).encode()
-
     monkeypatch.setattr(
         "diogenos.component.catalog.pulsar.pulsar.urllib.request.urlopen",
         Mock(return_value=response),
@@ -303,7 +304,6 @@ def test_ubuntu_pulsar_install_download_failure(
     )
 
     component = UbuntuPulsar(run=run)
-
     with pytest.raises(RuntimeError, match="download failed"):
         component.install(system)
 
@@ -320,7 +320,6 @@ def test_ubuntu_pulsar_rejects_unsupported_architecture(
         hardware=Mock(architecture="riscv64"),
     )
     component = UbuntuPulsar(run=run)
-
     with pytest.raises(RuntimeError, match="unsupported Pulsar architecture"):
         component.install(system)
 
@@ -337,7 +336,6 @@ def test_ubuntu_pulsar_rejects_missing_package(
     response = Mock()
     response.__enter__ = Mock(return_value=response)
     response.__exit__ = Mock(return_value=False)
-
     urlopen = Mock(return_value=response)
 
     monkeypatch.setattr(

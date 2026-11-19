@@ -97,6 +97,13 @@ class UbuntuPulsar(UbuntuComponentImplementation, APTInstallMixin):
         """Install packages using APT."""
         self._run(
             prepare_command(
+                ["apt-get", "update"],
+                privileged=True,
+            ),
+            check=True,
+        )
+        self._run(
+            prepare_command(
                 ["apt-get", "install", "-y", *packages],
                 privileged=True,
             ),
