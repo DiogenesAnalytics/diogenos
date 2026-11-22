@@ -5,10 +5,10 @@ import subprocess
 import pytest
 from pytest import MonkeyPatch
 
-from diogenos.component.catalog.keyboard.emacs_keymap import KEYMAP_CONTENT
-from diogenos.component.catalog.keyboard.emacs_keymap import KEYMAP_PATH
-from diogenos.component.catalog.keyboard.emacs_keymap import EmacsKeymap
-from diogenos.component.catalog.keyboard.emacs_keymap import UbuntuEmacsKeymap
+from diogenos.component.catalog.keyboard.keyd import EmacsKeymap
+from diogenos.component.catalog.keyboard.keyd import UbuntuEmacsKeymap
+from diogenos.component.catalog.keyboard.keyd.emacs_keymap import KEYMAP_CONTENT
+from diogenos.component.catalog.keyboard.keyd.emacs_keymap import KEYMAP_PATH
 from diogenos.system.base import System
 from tests.component.support import RunStub
 
@@ -187,7 +187,7 @@ def test_ubuntu_emacs_keymap_install_failure(
 
 
 @pytest.mark.component
-def test_emacs_keymap_declares_keyd_dependency() -> None:
+def test_emacs_keymap_dependencies() -> None:
     """Verify that the Emacs keymap depends on Keyd."""
     component = EmacsKeymap()
 

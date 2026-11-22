@@ -1,6 +1,8 @@
 """Define the Keyd component."""
 
 import subprocess
+import tempfile
+from pathlib import Path
 from typing import Callable
 from typing import Optional
 from typing import Tuple
@@ -8,14 +10,15 @@ from typing import Tuple
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.dependency import Dependency
 from diogenos.component.implementation.execution import prepare_command
-from diogenos.component.implementation.method import APTInstallMixin
 from diogenos.component.implementation.method import InstallMethodType
 from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
-KEYD_PPA = "ppa:keyd-team/ppa"
+KEYD_REPOSITORY = "https://github.com/rvaiya/keyd.git"
+KEYD_VERSION = "v2.6.0"
 
 
 def _is_keyd_satisfied(
@@ -27,10 +30,8 @@ def _is_keyd_satisfied(
     ) and validate_command(run, ["systemctl", "is-active", "--quiet", "keyd"])
 
 
-class UbuntuKeyd(UbuntuComponentImplementation, APTInstallMixin):
+class UbuntuKeyd(UbuntuComponentImplementation):
     """Define the Ubuntu implementation of Keyd."""
-
-    DEFAULT_INSTALL_METHOD = InstallMethodType.APT
 
     def __init__(
         self,
@@ -44,47 +45,43 @@ class UbuntuKeyd(UbuntuComponentImplementation, APTInstallMixin):
         system: System,
         method: Optional[InstallMethodType] = None,
     ) -> None:
-        """Install and enable Keyd on Ubuntu."""
+        """Build, install, and enable Keyd on Ubuntu."""
+        with tempfile.TemporaryDirectory(prefix="diogenos-keyd-") as directory:
+            source_directory = Path(directory) / "keyd"
+
+            self._run(
+                [
+                    "git",
+                    "clone",
+                    "--branch",
+                    KEYD_VERSION,
+                    "--depth",
+                    "1",
+                    KEYD_REPOSITORY,
+                    str(source_directory),
+                ],
+                check=True,
+            )
+
+            self._run(
+                ["make"],
+                cwd=source_directory,
+                check=True,
+            )
+
+            self._run(
+                prepare_command(["make", "install"], privileged=True),
+                cwd=source_directory,
+                check=True,
+            )
+
         self._run(
-            prepare_command(["apt-get", "update"], privileged=True),
+            prepare_command(["systemctl", "daemon-reload"], privileged=True),
             check=True,
         )
-        self._run(
-            prepare_command(
-                ["apt-get", "install", "-y", "software-properties-common"],
-                privileged=True,
-            ),
-            check=True,
-        )
-        self._run(
-            prepare_command(
-                ["add-apt-repository", "-y", KEYD_PPA],
-                privileged=True,
-            ),
-            check=True,
-        )
-        self._run(
-            prepare_command(["apt-get", "update"], privileged=True),
-            check=True,
-        )
-        self.install_packages(system, ("keyd",), method)
         self._run(
             prepare_command(
                 ["systemctl", "enable", "--now", "keyd"],
-                privileged=True,
-            ),
-            check=True,
-        )
-
-    def install_apt(
-        self,
-        system: System,
-        packages: Tuple[str, ...],
-    ) -> None:
-        """Install packages using APT."""
-        self._run(
-            prepare_command(
-                ["apt-get", "install", "-y", *packages],
                 privileged=True,
             ),
             check=True,
@@ -106,6 +103,14 @@ class Keyd(Component):
     ) -> None:
         """Initialize the Keyd component."""
         self._run = run
+
+    def dependencies(self) -> Tuple[Dependency, ...]:
+        """Return the component dependencies."""
+        return (
+            Dependency("git"),
+            Dependency("build_essentials"),
+            Dependency("linux_kernel_headers"),
+        )
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether Keyd is installed and running."""

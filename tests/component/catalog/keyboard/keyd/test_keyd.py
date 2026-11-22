@@ -1,13 +1,15 @@
 """Test the Keyd component."""
 
 import subprocess
+from pathlib import Path
 
 import pytest
 from pytest import MonkeyPatch
 
-from diogenos.component.catalog.keyboard.keyd import KEYD_PPA
 from diogenos.component.catalog.keyboard.keyd import Keyd
 from diogenos.component.catalog.keyboard.keyd import UbuntuKeyd
+from diogenos.component.catalog.keyboard.keyd.keyd import KEYD_REPOSITORY
+from diogenos.component.catalog.keyboard.keyd.keyd import KEYD_VERSION
 from diogenos.system.base import System
 from tests.component.support import RunStub
 
@@ -16,6 +18,19 @@ from tests.component.support import RunStub
 def test_keyd_registry_id() -> None:
     """Test the Keyd registry ID."""
     assert Keyd.registry_id == "keyd"
+
+
+@pytest.mark.component
+def test_keyd_dependencies() -> None:
+    """Verify that Keyd declares its build dependencies."""
+    component = Keyd()
+
+    dependencies = component.dependencies()
+
+    assert len(dependencies) == 3
+    assert dependencies[0].name == "git"
+    assert dependencies[1].name == "build_essentials"
+    assert dependencies[2].name == "linux_kernel_headers"
 
 
 @pytest.mark.component
@@ -85,32 +100,45 @@ def test_ubuntu_keyd_install(
 
     implementation.install(system)
 
-    assert run_stub.calls == [
-        (
-            ["apt-get", "update"],
-            {"check": True},
-        ),
-        (
-            ["apt-get", "install", "-y", "software-properties-common"],
-            {"check": True},
-        ),
-        (
-            ["add-apt-repository", "-y", KEYD_PPA],
-            {"check": True},
-        ),
-        (
-            ["apt-get", "update"],
-            {"check": True},
-        ),
-        (
-            ["apt-get", "install", "-y", "keyd"],
-            {"check": True},
-        ),
-        (
-            ["systemctl", "enable", "--now", "keyd"],
-            {"check": True},
-        ),
+    clone_command = run_stub.calls[0][0]
+    source_directory = Path(clone_command[-1])
+
+    assert clone_command == [
+        "git",
+        "clone",
+        "--branch",
+        KEYD_VERSION,
+        "--depth",
+        "1",
+        KEYD_REPOSITORY,
+        str(source_directory),
     ]
+    assert source_directory.name == "keyd"
+    assert source_directory.parent.name.startswith("diogenos-keyd-")
+
+    assert run_stub.calls[1] == (
+        ["make"],
+        {
+            "cwd": source_directory,
+            "check": True,
+        },
+    )
+    assert run_stub.calls[2] == (
+        ["make", "install"],
+        {
+            "cwd": source_directory,
+            "check": True,
+        },
+    )
+    assert run_stub.calls[3] == (
+        ["systemctl", "daemon-reload"],
+        {"check": True},
+    )
+    assert run_stub.calls[4] == (
+        ["systemctl", "enable", "--now", "keyd"],
+        {"check": True},
+    )
+    assert len(run_stub.calls) == 5
 
 
 @pytest.mark.component
@@ -119,44 +147,47 @@ def test_ubuntu_keyd_install_with_sudo(
     run_stub: RunStub,
     monkeypatch: MonkeyPatch,
 ) -> None:
-    """Test that Keyd installation uses sudo when not running as root."""
+    """Test that privileged Keyd installation commands use sudo."""
     monkeypatch.setattr("os.geteuid", lambda: 1000)
     implementation = UbuntuKeyd(run=run_stub)
 
     implementation.install(system)
 
-    assert run_stub.calls == [
-        (
-            ["sudo", "apt-get", "update"],
-            {"check": True},
-        ),
-        (
-            [
-                "sudo",
-                "apt-get",
-                "install",
-                "-y",
-                "software-properties-common",
-            ],
-            {"check": True},
-        ),
-        (
-            ["sudo", "add-apt-repository", "-y", KEYD_PPA],
-            {"check": True},
-        ),
-        (
-            ["sudo", "apt-get", "update"],
-            {"check": True},
-        ),
-        (
-            ["sudo", "apt-get", "install", "-y", "keyd"],
-            {"check": True},
-        ),
-        (
-            ["sudo", "systemctl", "enable", "--now", "keyd"],
-            {"check": True},
-        ),
+    clone_command = run_stub.calls[0][0]
+    source_directory = Path(clone_command[-1])
+
+    assert run_stub.calls[0][0][:7] == [
+        "git",
+        "clone",
+        "--branch",
+        KEYD_VERSION,
+        "--depth",
+        "1",
+        KEYD_REPOSITORY,
     ]
+    assert run_stub.calls[1] == (
+        ["make"],
+        {
+            "cwd": source_directory,
+            "check": True,
+        },
+    )
+    assert run_stub.calls[2] == (
+        ["sudo", "make", "install"],
+        {
+            "cwd": source_directory,
+            "check": True,
+        },
+    )
+    assert run_stub.calls[3] == (
+        ["sudo", "systemctl", "daemon-reload"],
+        {"check": True},
+    )
+    assert run_stub.calls[4] == (
+        ["sudo", "systemctl", "enable", "--now", "keyd"],
+        {"check": True},
+    )
+    assert len(run_stub.calls) == 5
 
 
 @pytest.mark.component
@@ -204,8 +235,10 @@ def test_ubuntu_keyd_verify_failure(
 def test_ubuntu_keyd_install_failure(
     system: System,
     run_stub: RunStub,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Test that a failed Keyd installation command raises an error."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
     run_stub.returncode = 1
     implementation = UbuntuKeyd(run=run_stub)
 
