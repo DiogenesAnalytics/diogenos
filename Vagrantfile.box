@@ -13,7 +13,6 @@ Vagrant.configure("2") do |config|
       ".mypy_cache/",
       ".ruff_cache/",
       "dist/",
-      "build/"
     ]
 
   config.vm.provider "libvirt" do |lv|
