@@ -7,6 +7,7 @@ from pytest import MonkeyPatch
 
 from diogenos.component.catalog.keyboard.keyd import EmacsKeymap
 from diogenos.component.catalog.keyboard.keyd import UbuntuEmacsKeymap
+from diogenos.component.catalog.keyboard.keyd.configuration import CONFIGURATION_PATH
 from diogenos.component.catalog.keyboard.keyd.emacs_keymap import KEYMAP_CONTENT
 from diogenos.component.catalog.keyboard.keyd.emacs_keymap import KEYMAP_PATH
 from diogenos.system.base import System
@@ -16,7 +17,7 @@ from tests.component.support import RunStub
 @pytest.mark.component
 def test_emacs_keymap_registry_id() -> None:
     """Test the Emacs keymap registry ID."""
-    assert EmacsKeymap.registry_id == "emacs_keymap"
+    assert EmacsKeymap.registry_id == "keyd.keymap.emacs"
 
 
 @pytest.mark.component
@@ -30,7 +31,7 @@ def test_emacs_keymap_is_satisfied(
     assert component.is_satisfied(system) is True
     assert run_stub.calls == [
         (
-            ["keyd", "check", KEYMAP_PATH],
+            ["keyd", "check", CONFIGURATION_PATH],
             {
                 "capture_output": True,
                 "check": False,
@@ -89,7 +90,7 @@ def test_ubuntu_emacs_keymap_install(
             },
         ),
         (
-            ["keyd", "check", KEYMAP_PATH],
+            ["keyd", "check", CONFIGURATION_PATH],
             {
                 "capture_output": True,
                 "check": True,
@@ -126,7 +127,7 @@ def test_ubuntu_emacs_keymap_install_with_sudo(
             },
         ),
         (
-            ["keyd", "check", KEYMAP_PATH],
+            ["keyd", "check", CONFIGURATION_PATH],
             {
                 "capture_output": True,
                 "check": True,
@@ -151,7 +152,7 @@ def test_ubuntu_emacs_keymap_verify(
     assert implementation.verify(system) is True
     assert run_stub.calls == [
         (
-            ["keyd", "check", KEYMAP_PATH],
+            ["keyd", "check", CONFIGURATION_PATH],
             {
                 "capture_output": True,
                 "check": False,
@@ -188,10 +189,10 @@ def test_ubuntu_emacs_keymap_install_failure(
 
 @pytest.mark.component
 def test_emacs_keymap_dependencies() -> None:
-    """Verify that the Emacs keymap depends on Keyd."""
+    """Verify that the Emacs keymap depends on Keyd configuration."""
     component = EmacsKeymap()
 
     dependencies = component.dependencies()
 
     assert len(dependencies) == 1
-    assert dependencies[0].name == "keyd"
+    assert dependencies[0].name == "keyd.config"

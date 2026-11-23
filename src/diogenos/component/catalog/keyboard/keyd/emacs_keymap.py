@@ -8,6 +8,8 @@ from typing import Tuple
 from diogenos.component import Component
 from diogenos.component import ComponentImplementation
 from diogenos.component import UbuntuComponentImplementation
+from diogenos.component.catalog.keyboard.keyd.configuration import CONFIGURATION_PATH
+from diogenos.component.catalog.keyboard.keyd.configuration import EMACS_KEYMAP_PATH
 from diogenos.component.dependency import Dependency
 from diogenos.component.implementation.execution import prepare_command
 from diogenos.component.implementation.method import InstallMethodType
@@ -15,22 +17,19 @@ from diogenos.component.validation import validate_command
 from diogenos.system.base import System
 
 
-KEYMAP_PATH = "/etc/keyd/diogenos-emacs.conf"
+KEYMAP_PATH = EMACS_KEYMAP_PATH
 
 KEYMAP_CONTENT = """\
-[ids]
-*
-
-[main]
+[control]
 # Cursor movement
-C-b = left
-C-f = right
-C-p = up
-C-n = down
+b = left
+f = right
+p = up
+n = down
 
 # Line navigation
-C-a = home
-C-e = end
+a = home
+e = end
 """
 
 
@@ -58,7 +57,7 @@ class UbuntuEmacsKeymap(UbuntuComponentImplementation):
             text=True,
         )
         self._run(
-            ["keyd", "check", KEYMAP_PATH],
+            ["keyd", "check", CONFIGURATION_PATH],
             capture_output=True,
             check=True,
             text=True,
@@ -72,14 +71,14 @@ class UbuntuEmacsKeymap(UbuntuComponentImplementation):
         """Verify that the Emacs keymap configuration is valid."""
         return validate_command(
             self._run,
-            ["keyd", "check", KEYMAP_PATH],
+            ["keyd", "check", CONFIGURATION_PATH],
         )
 
 
 class EmacsKeymap(Component):
     """Represent the system-wide Emacs keymap."""
 
-    registry_id = "emacs_keymap"
+    registry_id = "keyd.keymap.emacs"
 
     def __init__(
         self,
@@ -90,13 +89,13 @@ class EmacsKeymap(Component):
 
     def dependencies(self) -> Tuple[Dependency, ...]:
         """Return the component dependencies."""
-        return (Dependency("keyd"),)
+        return (Dependency("keyd.config"),)
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether the Emacs keymap is installed and valid."""
         return validate_command(
             self._run,
-            ["keyd", "check", KEYMAP_PATH],
+            ["keyd", "check", CONFIGURATION_PATH],
         )
 
     def implementations(

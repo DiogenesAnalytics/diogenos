@@ -3,6 +3,8 @@
 from diogenos.component.catalog.keyboard.gnome import GnomeOverviewKeybindings
 from diogenos.component.catalog.keyboard.gnome import GnomeSuperKey
 from diogenos.component.catalog.keyboard.gnome import GnomeWorkspaceNavigation
+from diogenos.component.catalog.keyboard.keyd import EmacsKeymap
+from diogenos.component.catalog.keyboard.keyd import MacOSKeymap
 from diogenos.feature.base import Feature
 
 
@@ -18,5 +20,7 @@ class MacOSKeyboard(Feature):
                 GnomeSuperKey(),
                 GnomeOverviewKeybindings(),
                 GnomeWorkspaceNavigation(),
+                EmacsKeymap(),
+                MacOSKeymap(),
             ),
         )
