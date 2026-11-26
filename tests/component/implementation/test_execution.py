@@ -184,3 +184,74 @@ def test_download_file_preserves_existing_destination(
 
     assert destination.read_bytes() == original_content
     assert list(tmp_path.iterdir()) == [destination]
+
+
+@pytest.mark.component
+def test_prepare_command_as_user_when_running_as_root(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Switch to the specified user when running as root."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
+
+    command = prepare_command(
+        ["systemctl", "--user", "daemon-reload"],
+        user="vagrant",
+    )
+
+    assert command == [
+        "sudo",
+        "--user",
+        "vagrant",
+        "--",
+        "systemctl",
+        "--user",
+        "daemon-reload",
+    ]
+
+
+@pytest.mark.component
+def test_prepare_command_as_current_user(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Return the original command when already running as the user."""
+    monkeypatch.setattr("os.geteuid", lambda: 1000)
+
+    command = prepare_command(
+        ["systemctl", "--user", "daemon-reload"],
+        user="vagrant",
+    )
+
+    assert command == ["systemctl", "--user", "daemon-reload"]
+
+
+@pytest.mark.component
+def test_prepare_command_as_user_does_not_modify_input(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Leave the original command unchanged when switching users."""
+    monkeypatch.setattr("os.geteuid", lambda: 0)
+    original = ["systemctl", "--user", "daemon-reload"]
+
+    command = prepare_command(original, user="vagrant")
+
+    assert command == [
+        "sudo",
+        "--user",
+        "vagrant",
+        "--",
+        "systemctl",
+        "--user",
+        "daemon-reload",
+    ]
+    assert original == ["systemctl", "--user", "daemon-reload"]
+
+
+@pytest.mark.component
+def test_prepare_command_rejects_privileged_user_combination() -> None:
+    """Reject conflicting privilege and user execution contexts."""
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        prepare_command(
+            ["systemctl", "--user", "daemon-reload"],
+            privileged=True,
+            user="vagrant",
+        )

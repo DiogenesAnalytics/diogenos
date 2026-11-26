@@ -5,6 +5,7 @@ import tempfile
 import urllib.request
 from pathlib import Path
 from typing import List
+from typing import Optional
 from typing import Sequence
 
 
@@ -20,12 +21,18 @@ def prepare_command(
     command: Sequence[str],
     *,
     privileged: bool = False,
+    user: Optional[str] = None,
 ) -> List[str]:
     """Prepare a command for execution."""
+    if privileged and user is not None:
+        raise ValueError("Cannot specify both privileged and user.")
+
     executable = list(command)
 
     if privileged:
         executable = privileged_command(executable)
+    elif user is not None and os.geteuid() == 0:
+        executable = ["sudo", "--user", user, "--", *executable]
 
     return executable
 
