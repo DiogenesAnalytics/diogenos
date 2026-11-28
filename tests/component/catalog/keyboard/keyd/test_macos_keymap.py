@@ -1,6 +1,7 @@
 """Test the macOS keymap component."""
 
 import subprocess
+from pathlib import Path
 
 import pytest
 from pytest import MonkeyPatch
@@ -12,6 +13,21 @@ from diogenos.component.catalog.keyboard.keyd.macos_keymap import KEYMAP_CONTENT
 from diogenos.component.catalog.keyboard.keyd.macos_keymap import KEYMAP_PATH
 from diogenos.system.base import System
 from tests.component.support import RunStub
+
+
+def install_keymap_file(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    content: str,
+) -> None:
+    """Create a temporary keymap file and patch its path."""
+    keymap_path = tmp_path / "diogenos-macos"
+    keymap_path.write_text(content, encoding="utf-8")
+
+    monkeypatch.setattr(
+        "diogenos.component.catalog.keyboard.keyd.macos_keymap.KEYMAP_PATH",
+        keymap_path,
+    )
 
 
 @pytest.mark.component
@@ -35,29 +51,55 @@ def test_macos_keymap_dependencies() -> None:
 def test_macos_keymap_is_satisfied(
     system: System,
     run_stub: RunStub,
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
 ) -> None:
-    """Verify that the macOS keymap is satisfied when its configuration is valid."""
+    """Test that the macOS keymap is satisfied when installed and valid."""
+    install_keymap_file(tmp_path, monkeypatch, KEYMAP_CONTENT)
     component = MacOSKeymap(run=run_stub)
 
     assert component.is_satisfied(system) is True
-    assert run_stub.calls == [
-        (
-            ["keyd", "check", CONFIGURATION_PATH],
-            {
-                "capture_output": True,
-                "check": False,
-                "text": True,
-            },
-        ),
-    ]
 
 
 @pytest.mark.component
-def test_macos_keymap_is_not_satisfied(
+def test_macos_keymap_is_not_satisfied_when_empty(
     system: System,
     run_stub: RunStub,
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
 ) -> None:
-    """Verify macOS keymap not satisfied when its configuration is invalid."""
+    """Test that an empty macOS keymap is not satisfied."""
+    install_keymap_file(tmp_path, monkeypatch, "")
+    component = MacOSKeymap(run=run_stub)
+
+    assert component.is_satisfied(system) is False
+    assert run_stub.calls == []
+
+
+@pytest.mark.component
+def test_macos_keymap_is_not_satisfied_when_incorrect(
+    system: System,
+    run_stub: RunStub,
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Test that an incorrect macOS keymap is not satisfied."""
+    install_keymap_file(tmp_path, monkeypatch, "[meta]\na = a\n")
+    component = MacOSKeymap(run=run_stub)
+
+    assert component.is_satisfied(system) is False
+    assert run_stub.calls == []
+
+
+@pytest.mark.component
+def test_macos_keymap_is_not_satisfied_when_configuration_is_invalid(
+    system: System,
+    run_stub: RunStub,
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Test that an invalid Keyd configuration is not satisfied."""
+    install_keymap_file(tmp_path, monkeypatch, KEYMAP_CONTENT)
     run_stub.returncode = 1
     component = MacOSKeymap(run=run_stub)
 
@@ -157,33 +199,47 @@ def test_ubuntu_macos_keymap_install_with_sudo(
 def test_ubuntu_macos_keymap_verify(
     system: System,
     run_stub: RunStub,
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify the macOS keymap implementation."""
+    install_keymap_file(tmp_path, monkeypatch, KEYMAP_CONTENT)
     implementation = UbuntuMacOSKeymap(run=run_stub)
 
     assert implementation.verify(system) is True
-    assert run_stub.calls == [
-        (
-            ["keyd", "check", CONFIGURATION_PATH],
-            {
-                "capture_output": True,
-                "check": False,
-                "text": True,
-            },
-        ),
-    ]
 
 
 @pytest.mark.component
 def test_ubuntu_macos_keymap_verify_failure(
     system: System,
     run_stub: RunStub,
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Verify that failed configuration validation is reported."""
+    install_keymap_file(tmp_path, monkeypatch, KEYMAP_CONTENT)
     run_stub.returncode = 1
     implementation = UbuntuMacOSKeymap(run=run_stub)
 
     assert implementation.verify(system) is False
+
+
+@pytest.mark.component
+def test_ubuntu_macos_keymap_verify_missing_file(
+    system: System,
+    run_stub: RunStub,
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Test verification fails when the macOS keymap file is missing."""
+    monkeypatch.setattr(
+        "diogenos.component.catalog.keyboard.keyd.macos_keymap.KEYMAP_PATH",
+        tmp_path / "missing",
+    )
+    implementation = UbuntuMacOSKeymap(run=run_stub)
+
+    assert implementation.verify(system) is False
+    assert run_stub.calls == []
 
 
 @pytest.mark.component

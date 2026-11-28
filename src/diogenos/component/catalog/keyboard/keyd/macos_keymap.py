@@ -1,6 +1,7 @@
 """Define the macOS keymap component."""
 
 import subprocess
+from pathlib import Path
 from typing import Callable
 from typing import Optional
 from typing import Tuple
@@ -30,6 +31,21 @@ s = C-s
 q = C-q
 w = C-w
 """
+
+
+def _is_keymap_installed(
+    run: Callable[..., subprocess.CompletedProcess[str]],
+) -> bool:
+    """Determine whether the macOS keymap is installed and valid."""
+    try:
+        content = Path(KEYMAP_PATH).read_text(encoding="utf-8")
+    except OSError:
+        return False
+
+    return content == KEYMAP_CONTENT and validate_command(
+        run,
+        ["keyd", "check", CONFIGURATION_PATH],
+    )
 
 
 class UbuntuMacOSKeymap(UbuntuComponentImplementation):
@@ -67,11 +83,8 @@ class UbuntuMacOSKeymap(UbuntuComponentImplementation):
         )
 
     def verify(self, system: System) -> bool:
-        """Verify that the macOS keymap configuration is valid."""
-        return validate_command(
-            self._run,
-            ["keyd", "check", CONFIGURATION_PATH],
-        )
+        """Verify that the macOS keymap is installed and valid."""
+        return _is_keymap_installed(self._run)
 
 
 class MacOSKeymap(Component):
@@ -92,10 +105,7 @@ class MacOSKeymap(Component):
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether the macOS keymap is installed and valid."""
-        return validate_command(
-            self._run,
-            ["keyd", "check", CONFIGURATION_PATH],
-        )
+        return _is_keymap_installed(self._run)
 
     def implementations(
         self,

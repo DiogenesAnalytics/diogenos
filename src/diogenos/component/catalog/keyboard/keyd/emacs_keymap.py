@@ -1,6 +1,7 @@
 """Define the Emacs keymap component."""
 
 import subprocess
+from pathlib import Path
 from typing import Callable
 from typing import Optional
 from typing import Tuple
@@ -31,6 +32,21 @@ n = down
 a = home
 e = end
 """
+
+
+def _is_keymap_installed(
+    run: Callable[..., subprocess.CompletedProcess[str]],
+) -> bool:
+    """Determine whether the Emacs keymap is installed and valid."""
+    try:
+        content = Path(KEYMAP_PATH).read_text(encoding="utf-8")
+    except OSError:
+        return False
+
+    return content == KEYMAP_CONTENT and validate_command(
+        run,
+        ["keyd", "check", CONFIGURATION_PATH],
+    )
 
 
 class UbuntuEmacsKeymap(UbuntuComponentImplementation):
@@ -68,11 +84,8 @@ class UbuntuEmacsKeymap(UbuntuComponentImplementation):
         )
 
     def verify(self, system: System) -> bool:
-        """Verify that the Emacs keymap configuration is valid."""
-        return validate_command(
-            self._run,
-            ["keyd", "check", CONFIGURATION_PATH],
-        )
+        """Verify that the Emacs keymap is installed and valid."""
+        return _is_keymap_installed(self._run)
 
 
 class EmacsKeymap(Component):
@@ -93,10 +106,7 @@ class EmacsKeymap(Component):
 
     def is_satisfied(self, system: System) -> bool:
         """Determine whether the Emacs keymap is installed and valid."""
-        return validate_command(
-            self._run,
-            ["keyd", "check", CONFIGURATION_PATH],
-        )
+        return _is_keymap_installed(self._run)
 
     def implementations(
         self,
