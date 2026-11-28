@@ -1,10 +1,12 @@
 """Test the Keyd application mapper component."""
 
 import subprocess
+from pathlib import Path
 from typing import List
 
 import pytest
 
+import diogenos.component.catalog.keyboard.keyd.application_mapper as application_mapper
 from diogenos.component.catalog.keyboard.keyd.application_mapper import (
     KEYD_EXTENSION_SOURCE,
 )
@@ -15,6 +17,7 @@ from diogenos.component.catalog.keyboard.keyd.application_mapper import SERVICE_
 from diogenos.component.catalog.keyboard.keyd.application_mapper import (
     SERVICE_DIRECTORY,
 )
+from diogenos.component.catalog.keyboard.keyd.application_mapper import SERVICE_NAME
 from diogenos.component.catalog.keyboard.keyd.application_mapper import SERVICE_PATH
 from diogenos.component.catalog.keyboard.keyd.application_mapper import (
     KeydApplicationMapper,
@@ -34,15 +37,11 @@ class ApplicationMapperRunStub(RunStub):
 
     def __init__(
         self,
-        extension_enabled: bool = True,
         service_enabled: bool = True,
-        service_active: bool = True,
     ) -> None:
         """Initialize the stub."""
         super().__init__()
-        self.extension_enabled = extension_enabled
         self.service_enabled = service_enabled
-        self.service_active = service_active
 
     def __call__(
         self,
@@ -51,37 +50,21 @@ class ApplicationMapperRunStub(RunStub):
     ) -> subprocess.CompletedProcess[str]:
         """Record a command and return a simulated result."""
         returncode = 0
-        stdout = ""
 
-        if command == ["gnome-extensions", "info", KEYD_EXTENSION_UUID]:
-            if self.extension_enabled:
-                stdout = "Enabled: Yes\nState: ACTIVE\n"
-            else:
-                stdout = "Enabled: No\nState: INACTIVE\n"
-                returncode = 1
-
-        elif command == [
+        if command == [
             "systemctl",
             "--user",
             "is-enabled",
-            "keyd-application-mapper.service",
+            SERVICE_NAME,
         ]:
             returncode = 0 if self.service_enabled else 1
-
-        elif command == [
-            "systemctl",
-            "--user",
-            "is-active",
-            "keyd-application-mapper.service",
-        ]:
-            returncode = 0 if self.service_active else 1
 
         self.calls.append((command, kwargs))
 
         result = subprocess.CompletedProcess(
             args=command,
             returncode=returncode,
-            stdout=stdout,
+            stdout="",
             stderr="",
         )
 
@@ -89,11 +72,30 @@ class ApplicationMapperRunStub(RunStub):
             raise subprocess.CalledProcessError(
                 returncode=returncode,
                 cmd=command,
-                output=stdout,
-                stderr="",
             )
 
         return result
+
+
+@pytest.fixture
+def extension_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Path:
+    """Create a temporary Keyd GNOME extension directory."""
+    directory = tmp_path / KEYD_EXTENSION_UUID
+    directory.mkdir()
+
+    (directory / "extension.js").write_text("", encoding="utf-8")
+    (directory / "metadata.json").write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(
+        application_mapper,
+        "_get_extension_directory",
+        lambda: directory,
+    )
+
+    return directory
 
 
 @pytest.mark.component
@@ -116,8 +118,9 @@ def test_application_mapper_dependencies() -> None:
 @pytest.mark.component
 def test_application_mapper_is_satisfied(
     system: System,
+    extension_directory: Path,
 ) -> None:
-    """Test that the application mapper is satisfied."""
+    """Test that the installed application mapper is satisfied."""
     run_stub = ApplicationMapperRunStub()
     component = KeydApplicationMapper(run=run_stub)
 
@@ -125,12 +128,13 @@ def test_application_mapper_is_satisfied(
 
 
 @pytest.mark.component
-def test_application_mapper_is_not_satisfied_when_extension_is_disabled(
+def test_application_mapper_is_not_satisfied_when_extension_is_missing(
     system: System,
+    extension_directory: Path,
 ) -> None:
-    """Test that a disabled extension makes the component unsatisfied."""
-    run_stub = ApplicationMapperRunStub(extension_enabled=False)
-    component = KeydApplicationMapper(run=run_stub)
+    """Test that a missing extension makes the component unsatisfied."""
+    (extension_directory / "extension.js").unlink()
+    component = KeydApplicationMapper(run=ApplicationMapperRunStub())
 
     assert component.is_satisfied(system) is False
 
@@ -138,20 +142,10 @@ def test_application_mapper_is_not_satisfied_when_extension_is_disabled(
 @pytest.mark.component
 def test_application_mapper_is_not_satisfied_when_service_is_disabled(
     system: System,
+    extension_directory: Path,
 ) -> None:
     """Test that a disabled service makes the component unsatisfied."""
     run_stub = ApplicationMapperRunStub(service_enabled=False)
-    component = KeydApplicationMapper(run=run_stub)
-
-    assert component.is_satisfied(system) is False
-
-
-@pytest.mark.component
-def test_application_mapper_is_not_satisfied_when_service_is_inactive(
-    system: System,
-) -> None:
-    """Test that an inactive service makes the component unsatisfied."""
-    run_stub = ApplicationMapperRunStub(service_active=False)
     component = KeydApplicationMapper(run=run_stub)
 
     assert component.is_satisfied(system) is False
@@ -227,8 +221,7 @@ def test_ubuntu_application_mapper_install(
                 "systemctl",
                 "--user",
                 "enable",
-                "--now",
-                "keyd-application-mapper.service",
+                SERVICE_NAME,
             ],
             {"check": True},
         ),
@@ -238,8 +231,9 @@ def test_ubuntu_application_mapper_install(
 @pytest.mark.component
 def test_ubuntu_application_mapper_verify(
     system: System,
+    extension_directory: Path,
 ) -> None:
-    """Test verifying the Keyd application mapper."""
+    """Test verifying the installed Keyd application mapper."""
     run_stub = ApplicationMapperRunStub()
     implementation = UbuntuKeydApplicationMapper(run=run_stub)
 
@@ -249,9 +243,10 @@ def test_ubuntu_application_mapper_verify(
 @pytest.mark.component
 def test_ubuntu_application_mapper_verify_failure(
     system: System,
+    extension_directory: Path,
 ) -> None:
-    """Test failed verification of the Keyd application mapper."""
-    run_stub = ApplicationMapperRunStub(service_active=False)
+    """Test failed verification when the service is disabled."""
+    run_stub = ApplicationMapperRunStub(service_enabled=False)
     implementation = UbuntuKeydApplicationMapper(run=run_stub)
 
     assert implementation.verify(system) is False

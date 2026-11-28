@@ -21,20 +21,22 @@ MAPPER_EXECUTABLE = "/usr/local/bin/keyd-application-mapper"
 
 SERVICE_DIRECTORY = Path.home() / ".config/systemd/user"
 SERVICE_PATH = SERVICE_DIRECTORY / "keyd-application-mapper.service"
+SERVICE_NAME = "keyd-application-mapper.service"
 
-SERVICE_CONTENT = """\
+SERVICE_CONTENT = f"""\
 [Unit]
 Description=Keyd Application Mapper
+PartOf=graphical-session.target
 After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 -u /usr/local/bin/keyd-application-mapper --verbose
+ExecStart=/usr/bin/python3 -u {MAPPER_EXECUTABLE} --verbose
 Restart=on-failure
 RestartSec=5
 
 [Install]
-WantedBy=default.target
+WantedBy=graphical-session.target
 """
 
 
@@ -43,40 +45,21 @@ def _get_extension_directory() -> Path:
     return Path.home() / ".local/share/gnome-shell/extensions" / KEYD_EXTENSION_UUID
 
 
-def _is_extension_enabled(
-    run: Callable[..., subprocess.CompletedProcess[str]],
-) -> bool:
-    """Determine whether the Keyd GNOME extension is enabled."""
-    result = run(
-        ["gnome-extensions", "info", KEYD_EXTENSION_UUID],
-        capture_output=True,
-        check=False,
-        text=True,
-    )
+def _is_extension_installed() -> bool:
+    """Determine whether the Keyd GNOME extension is installed."""
+    extension_directory = _get_extension_directory()
 
-    return (
-        result.returncode == 0
-        and "Enabled: Yes" in result.stdout
-        and "State: ACTIVE" in result.stdout
-    )
+    return (extension_directory / "extension.js").is_file() and (
+        extension_directory / "metadata.json"
+    ).is_file()
 
 
 def _is_mapper_service_enabled(
     run: Callable[..., subprocess.CompletedProcess[str]],
 ) -> bool:
     """Determine whether the mapper service is enabled."""
-    return _validate_user_service(run, "is-enabled") and _validate_user_service(
-        run, "is-active"
-    )
-
-
-def _validate_user_service(
-    run: Callable[..., subprocess.CompletedProcess[str]],
-    action: str,
-) -> bool:
-    """Validate the requested mapper service state."""
     result = run(
-        ["systemctl", "--user", action, "keyd-application-mapper.service"],
+        ["systemctl", "--user", "is-enabled", SERVICE_NAME],
         capture_output=True,
         check=False,
         text=True,
@@ -138,21 +121,13 @@ class UbuntuKeydApplicationMapper(UbuntuComponentImplementation):
             check=True,
         )
         self._run(
-            [
-                "systemctl",
-                "--user",
-                "enable",
-                "--now",
-                "keyd-application-mapper.service",
-            ],
+            ["systemctl", "--user", "enable", SERVICE_NAME],
             check=True,
         )
 
     def verify(self, system: System) -> bool:
-        """Verify that the extension and mapper service are operational."""
-        return _is_extension_enabled(self._run) and _is_mapper_service_enabled(
-            self._run
-        )
+        """Verify that the extension and mapper service are installed."""
+        return _is_extension_installed() and _is_mapper_service_enabled(self._run)
 
 
 class KeydApplicationMapper(Component):
@@ -172,10 +147,8 @@ class KeydApplicationMapper(Component):
         return (Dependency("keyd.config.user"),)
 
     def is_satisfied(self, system: System) -> bool:
-        """Determine whether the application mapper is configured."""
-        return _is_extension_enabled(self._run) and _is_mapper_service_enabled(
-            self._run
-        )
+        """Determine whether the application mapper is installed."""
+        return _is_extension_installed() and _is_mapper_service_enabled(self._run)
 
     def implementations(
         self,
